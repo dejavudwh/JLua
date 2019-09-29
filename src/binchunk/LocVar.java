@@ -1,7 +1,12 @@
 package binchunk;
 
+import lombok.Getter;
+import lombok.Setter;
+
 import java.nio.ByteBuffer;
 
+@Getter
+@Setter
 public class LocVar {
 
     private String varName;

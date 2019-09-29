@@ -1,8 +1,12 @@
 package binchunk;
 
-import java.nio.Buffer;
+import lombok.Getter;
+import lombok.Setter;
+
 import java.nio.ByteBuffer;
 
+@Getter
+@Setter
 public class Prototype {
 
     private static final int TAG_NIL       = 0x00;

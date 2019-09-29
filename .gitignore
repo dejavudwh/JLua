@@ -1,4 +1,4 @@
 /.idea
 /JLua.iml
 /out
-*.class
+.class

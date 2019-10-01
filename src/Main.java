@@ -2,6 +2,9 @@ import binchunk.BinaryChunk;
 import binchunk.LocVar;
 import binchunk.Prototype;
 import binchunk.Upvalue;
+import static vm.Instruction.*;
+import static vm.OpArgMask.*;
+import vm.OpCode;
 
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -42,7 +45,44 @@ public class Main {
         int[] lineInfo = f.getLineInfo();
         for (int i = 0; i < code.length; i++) {
             String line = lineInfo.length > 0 ? String.valueOf(lineInfo[i]) : "-";
-            System.out.printf("\t%d\t[%s]\t0x%08X\n", i+1, line, code[i]);
+            System.out.printf("\t%d\t[%s]\t%-8s \t", i + 1, line, getOpCode(code[i]));
+            printOperands(code[i]);
+            System.out.println();
+        }
+    }
+
+    private static void printOperands(int i) {
+        OpCode opCode = getOpCode(i);
+        int a = getA(i);
+        switch (opCode.getOpMode()) {
+            case iABC:
+                System.out.printf("%d", a);
+                if (opCode.getArgBMode() != OpArgN) {
+                    int b = getB(i);
+                    System.out.printf(" %d", b > 0xFF ? -1 - (b & 0xFF) : b);
+                }
+                if (opCode.getArgCMode() != OpArgN) {
+                    int c = getC(i);
+                    System.out.printf(" %d", c > 0xFF ? -1 - (c & 0xFF) : c);
+                }
+                break;
+            case iABx:
+                System.out.printf("%d", a);
+                int bx = getBx(i);
+                if (opCode.getArgBMode() == OpArgK) {
+                    System.out.printf(" %d", -1 - bx);
+                } else if (opCode.getArgBMode() == OpArgU) {
+                    System.out.printf(" %d", bx);
+                }
+                break;
+            case iAsBx:
+                int sbx = getSBx(i);
+                System.out.printf("%d %d", a, sbx);
+                break;
+            case iAx:
+                int ax = getAx(i);
+                System.out.printf("%d", -1 - ax);
+                break;
         }
     }
 

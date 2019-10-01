@@ -1,8 +1,11 @@
 package vm;
 
+import lombok.Getter;
+
 import static vm.OpArgMask.*;
 import static vm.OpMode.*;
 
+@Getter
 public enum OpCode {
 
     /*       T           A          B       C       mode                                    */

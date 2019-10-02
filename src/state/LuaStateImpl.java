@@ -3,6 +3,8 @@ package state;
 import api.LuaState;
 import api.LuaType;
 
+import static api.LuaType.*;
+
 /*
     Lua interpreter state
  */
@@ -79,121 +81,164 @@ public class LuaStateImpl implements LuaState {
 
     @Override
     public void setTop(int idx) {
+        int newTop = stack.absIndex(idx);
+        if (newTop < 0) {
+            throw new RuntimeException("stack underflow!");
+        }
 
+        int n = stack.top() - newTop;
+        if (n > 0) {
+            for (int i = 0; i < n; i++) {
+                stack.pop();
+            }
+        } else if (n < 0) {
+            for (int i = 0; i > n; i--) {
+                stack.push(null);
+            }
+        }
     }
 
     @Override
     public String typeName(LuaType tp) {
-        return null;
+        switch (tp) {
+            case LUA_TNONE:     return "no value";
+            case LUA_TNIL:      return "nil";
+            case LUA_TBOOLEAN:  return "boolean";
+            case LUA_TNUMBER:   return "number";
+            case LUA_TSTRING:   return "string";
+            case LUA_TTABLE:    return "table";
+            case LUA_TFUNCTION: return "function";
+            case LUA_TTHREAD:   return "thread";
+            default:            return "userdata";
+        }
     }
 
     @Override
     public LuaType type(int idx) {
-        return null;
+        return stack.isValid(idx) ? LuaValue.typeOf(stack.get(idx)) : LUA_TNONE;
     }
 
     @Override
     public boolean isNone(int idx) {
-        return false;
+        return type(idx) == LUA_TNONE;
     }
 
     @Override
     public boolean isNil(int idx) {
-        return false;
+        return type(idx) == LUA_TNIL;
     }
 
     @Override
     public boolean isNoneOrNil(int idx) {
-        return false;
+        LuaType t = type(idx);
+        return t == LUA_TNONE || t == LUA_TNIL;
     }
 
     @Override
     public boolean isBoolean(int idx) {
-        return false;
+        return type(idx) == LUA_TBOOLEAN;
     }
 
     @Override
     public boolean isInteger(int idx) {
-        return false;
+        return stack.get(idx) instanceof Long;
     }
 
     @Override
     public boolean isNumber(int idx) {
-        return false;
+        return toNumberX(idx) != null;
     }
 
     @Override
     public boolean isString(int idx) {
-        return false;
+        LuaType t = type(idx);
+        return t == LUA_TSTRING || t == LUA_TNUMBER;
     }
 
     @Override
     public boolean isTable(int idx) {
-        return false;
+        return type(idx) == LUA_TTABLE;
     }
 
     @Override
     public boolean isThread(int idx) {
-        return false;
+        return type(idx) == LUA_TTHREAD;
     }
 
     @Override
     public boolean isFunction(int idx) {
-        return false;
+        return type(idx) == LUA_TFUNCTION;
     }
 
     @Override
     public boolean toBoolean(int idx) {
-        return false;
+        return LuaValue.toBoolean(stack.get(idx));
     }
 
     @Override
     public long toInteger(int idx) {
-        return 0;
+        Long i = toIntegerX(idx);
+        return i == null ? 0 : i;
     }
 
     @Override
     public Long toIntegerX(int idx) {
-        return null;
+        Object val = stack.get(idx);
+        return val instanceof Long ? (Long) val : null;
     }
 
     @Override
     public double toNumber(int idx) {
-        return 0;
+        Double n = toNumberX(idx);
+        return n == null ? 0 : n;
     }
 
     @Override
     public Double toNumberX(int idx) {
-        return null;
+        Object val = stack.get(idx);
+        if (val instanceof Double) {
+            return (Double) val;
+        } else if (val instanceof Long) {
+            return ((Long) val).doubleValue();
+        } else {
+            return null;
+        }
     }
 
     @Override
     public String toString(int idx) {
-        return null;
+        Object val = stack.get(idx);
+        if (val instanceof String) {
+            return (String) val;
+        } else if (val instanceof Long || val instanceof Double) {
+            return val.toString();
+        } else {
+            return null;
+        }
     }
 
     @Override
     public void pushNil() {
-
+        stack.push(null);
     }
 
     @Override
     public void pushBoolean(boolean b) {
-
+        stack.push(b);
     }
 
     @Override
     public void pushInteger(long n) {
-
+        stack.push(n);
     }
 
     @Override
     public void pushNumber(double n) {
-
+        stack.push(n);
     }
 
     @Override
     public void pushString(String s) {
-
+        stack.push(s);
     }
 }

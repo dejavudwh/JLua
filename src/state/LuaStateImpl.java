@@ -1,5 +1,7 @@
 package state;
 
+import api.ArithOp;
+import api.CmpOp;
 import api.LuaState;
 import api.LuaType;
 
@@ -240,5 +242,25 @@ public class LuaStateImpl implements LuaState {
     @Override
     public void pushString(String s) {
         stack.push(s);
+    }
+
+    @Override
+    public void arith(ArithOp op) {
+
+    }
+
+    @Override
+    public boolean compare(int idx1, int idx2, CmpOp op) {
+        return false;
+    }
+
+    @Override
+    public void len(int idx) {
+
+    }
+
+    @Override
+    public void concat(int n) {
+
     }
 }

@@ -9,7 +9,7 @@ import vm.OpCode;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
-public class Main {
+public class DecompilingMain {
     public static void main(String[] args) throws Exception {
         byte[] data = Files.readAllBytes(Paths.get("test/resources/hw.luac"));
         Prototype proto = BinaryChunk.undump(data);

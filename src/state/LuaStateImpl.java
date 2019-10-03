@@ -253,13 +253,24 @@ public class LuaStateImpl implements LuaState {
         if (result != null) {
             stack.push(result);
         } else {
-            throw new RuntimeException("arithmetic error!")
+            throw new RuntimeException("arithmetic error!");
         }
     }
 
     @Override
     public boolean compare(int idx1, int idx2, CmpOp op) {
-        return false;
+        if (!stack.isValid(idx1) || !stack.isValid(idx2)) {
+            return false;
+        }
+
+        Object a = stack.get(idx1);
+        Object b = stack.get(idx2);
+        switch (op) {
+            case LUA_OPEQ: return Comparison.eq(a, b);
+            case LUA_OPLT: return Comparison.lt(a, b);
+            case LUA_OPLE: return Comparison.le(a, b);
+            default: throw new RuntimeException("invalid compare op!");
+        }
     }
 
     @Override

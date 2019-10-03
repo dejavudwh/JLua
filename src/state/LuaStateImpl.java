@@ -6,6 +6,7 @@ import api.LuaState;
 import api.LuaType;
 
 import static api.LuaType.*;
+import static api.ArithOp.*;
 
 /*
     Lua interpreter state
@@ -246,7 +247,14 @@ public class LuaStateImpl implements LuaState {
 
     @Override
     public void arith(ArithOp op) {
-
+        Object b = stack.pop();
+        Object a = op != LUA_OPUNM && op != LUA_OPBNOT ? stack.pop() : b;
+        Object result = Arithmetic.arith(a, b, op);
+        if (result != null) {
+            stack.push(result);
+        } else {
+            throw new RuntimeException("arithmetic error!")
+        }
     }
 
     @Override

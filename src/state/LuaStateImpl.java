@@ -275,11 +275,30 @@ public class LuaStateImpl implements LuaState {
 
     @Override
     public void len(int idx) {
-
+        Object val = stack.get(idx);
+        if (val instanceof String) {
+            pushInteger(((String) val).length());
+        } else {
+            throw new RuntimeException("length error!");
+        }
     }
 
     @Override
     public void concat(int n) {
+        if (n == 0) {
+            stack.push("");
+        } else if (n >= 2) {
+            for (int i = 1; i < n; i++) {
+                if (isString(-1) && isString(-2)) {
+                    String s2 = toString(-1);
+                    String s1 = toString(-2);
+                    pop(2);
+                    pushString(s1 + s2);
+                    continue;
+                }
 
+                throw new RuntimeException("concatenation error!");
+            }
+        }
     }
 }

@@ -2,6 +2,12 @@ package vm;
 
 public class Instruction {
 
+    /*
+        iABC  |   B:9   |   c:9   |    A:8    | opcode:6 |
+        iABx  |        Bx:18      |    A:8    | opcode:6 |
+        iAsBx |       sBx:18      |    A:8    | opcode:6 |
+        iAx   |              Ax:26            | opcode:6 |
+     */
     public static final int MAXARG_Bx = (1 << 18) - 1;// sBx 18 bit; 2^18 - 1
     public static final int MAXARG_sBx = MAXARG_Bx >> 1;//MAXARG_Bx / 2
 

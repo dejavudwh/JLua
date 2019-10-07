@@ -1,9 +1,7 @@
 package state;
 
-import api.ArithOp;
-import api.CmpOp;
-import api.LuaState;
-import api.LuaType;
+import api.*;
+import binchunk.Prototype;
 
 import static api.LuaType.*;
 import static api.ArithOp.*;
@@ -11,9 +9,11 @@ import static api.ArithOp.*;
 /*
     Lua interpreter state
  */
-public class LuaStateImpl implements LuaState {
+public class LuaStateImpl implements LuaState, LuaVM {
 
     private LuaStack stack = new LuaStack();
+    private Prototype proto;
+    private int pc;
 
     @Override
     public int getTop() {
@@ -299,6 +299,36 @@ public class LuaStateImpl implements LuaState {
 
                 throw new RuntimeException("concatenation error!");
             }
+        }
+    }
+
+    /* LuaVM */
+    @Override
+    public int getPC() {
+        return pc;
+    }
+
+    @Override
+    public void addPC(int n) {
+        pc += n;
+    }
+
+    @Override
+    public int fetch() {
+        return proto.getCode()[pc++];
+    }
+
+    @Override
+    public void getConst(int idx) {
+        stack.push(proto.getConstants()[idx]);
+    }
+
+    @Override
+    public void getRK(int rk) {
+        if (rk > 0xFF) {    // constant
+            getConst(rk & 0xFF);
+        } else {            // register
+            pushValue(rk + 1);
         }
     }
 }

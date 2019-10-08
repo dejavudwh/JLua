@@ -1,3 +1,5 @@
+package javas;
+
 import binchunk.BinaryChunk;
 import binchunk.LocVar;
 import binchunk.Prototype;

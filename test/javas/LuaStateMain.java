@@ -1,3 +1,5 @@
+package javas;
+
 import api.LuaState;
 import api.LuaType;
 import state.LuaStateImpl;

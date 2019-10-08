@@ -15,6 +15,14 @@ public class LuaStateImpl implements LuaState, LuaVM {
     private Prototype proto;
     private int pc;
 
+    public LuaStateImpl(Prototype proto) {
+        this.proto = proto;
+    }
+
+    public LuaStateImpl() {
+        proto = null;
+    }
+
     @Override
     public int getTop() {
         return stack.top();

@@ -281,6 +281,80 @@ public class LuaStateImpl implements LuaState, LuaVM {
         }
     }
 
+    /* get function (Lua -> Stack) */
+
+    @Override
+    public void newTable() {
+        createTable(0, 0);
+    }
+
+    @Override
+    public void createTable(int nArr, int nRec) {
+        stack.push(new LuaTable(nArr, nRec));
+    }
+
+    @Override
+    public LuaType getTable(int idx) {
+        Object t = stack.get(idx);
+        Object k = stack.pop();
+        return getTable(t, k);
+    }
+
+    private LuaType getTable(Object t, Object k) {
+        if (t instanceof LuaTable) {
+            Object v = ((LuaTable) t).get(k);
+            stack.push(v);
+            return LuaValue.typeOf(v);
+        }
+        throw new RuntimeException("not a table");
+    }
+
+    @Override
+    public LuaType getField(int idx, String k) {
+        Object t = stack.get(idx);
+        return getTable(t, k);
+    }
+
+    @Override
+     public LuaType getI(int idx, long i) {
+        Object t = stack.get(idx);
+        return getTable(t, i);
+    }
+
+    /* set function (Stack -> Lua) */
+
+    @Override
+    public void setTable(int idx) {
+        Object t = stack.get(idx);
+        Object v = stack.pop();
+        Object k = stack.pop();
+        setTable(t, k, v);
+    }
+
+    @Override
+    public void setField(int idx, String k) {
+        Object t = stack.get(idx);
+        Object v = stack.pop();
+        setTable(t, k, v);
+    }
+
+    @Override
+    public void setI(int idx, long i) {
+        Object t = stack.get(idx);
+        Object v = stack.pop();
+        setTable(t, i, v);
+    }
+
+    private void setTable(Object t, Object k, Object v) {
+        if (t instanceof LuaTable) {
+            ((LuaTable) t).put(k, v);
+            return;
+        }
+        throw new RuntimeException("not a table!");
+    }
+
+    /* miscellaneous functions */
+
     @Override
     public void len(int idx) {
         Object val = stack.get(idx);

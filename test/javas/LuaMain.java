@@ -15,7 +15,7 @@ import java.nio.file.Paths;
 public class LuaMain {
 
     public static void main(String[] args) throws Exception {
-        byte[] data = Files.readAllBytes(Paths.get("test/resources/st.luac"));
+        byte[] data = Files.readAllBytes(Paths.get("test/resources/tt.luac"));
         Prototype proto = BinaryChunk.undump(data);
         luaMain(proto);
     }

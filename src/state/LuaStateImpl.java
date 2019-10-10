@@ -3,6 +3,9 @@ package state;
 import api.*;
 import binchunk.Prototype;
 
+import java.util.Collections;
+import java.util.List;
+
 import static api.LuaType.*;
 import static api.ArithOp.*;
 
@@ -12,16 +15,19 @@ import static api.ArithOp.*;
 public class LuaStateImpl implements LuaState, LuaVM {
 
     private LuaStack stack = new LuaStack();
-    private Prototype proto;
-    private int pc;
 
-    public LuaStateImpl(Prototype proto) {
-        this.proto = proto;
+    private void pushLuaStack(LuaStack newTop) {
+        newTop.prev = this.stack;
+        this.stack = newTop;
     }
 
-    public LuaStateImpl() {
-        proto = null;
+    private void popLuaStack() {
+        LuaStack top = this.stack;
+        this.stack = top.prev;
+        top.prev = null;
     }
+
+    /* basic stack manipulation */
 
     @Override
     public int getTop() {
@@ -360,6 +366,8 @@ public class LuaStateImpl implements LuaState, LuaVM {
         Object val = stack.get(idx);
         if (val instanceof String) {
             pushInteger(((String) val).length());
+        } else if (val instanceof LuaTable) {
+            pushInteger(((LuaTable) val).length());
         } else {
             throw new RuntimeException("length error!");
         }
@@ -385,24 +393,20 @@ public class LuaStateImpl implements LuaState, LuaVM {
     }
 
     /* LuaVM */
-    @Override
-    public int getPC() {
-        return pc;
-    }
 
     @Override
     public void addPC(int n) {
-        pc += n;
+        stack.pc += n;
     }
 
     @Override
     public int fetch() {
-        return proto.getCode()[pc++];
+        return stack.closure.proto.getCode()[stack.pc++];
     }
 
     @Override
     public void getConst(int idx) {
-        stack.push(proto.getConstants()[idx]);
+        stack.push(stack.closure.proto.getConstants()[idx]);
     }
 
     @Override
@@ -412,5 +416,28 @@ public class LuaStateImpl implements LuaState, LuaVM {
         } else {            // register
             pushValue(rk + 1);
         }
+    }
+
+    @Override
+    public int registerCount() {
+        return stack.closure.proto.getMaxStackSize();
+    }
+
+    @Override
+    public void loadVararg(int n) {
+        List<Object> varargs = stack.varargs != null
+                ? stack.varargs : Collections.emptyList();
+        if (n < 0) {
+            n = varargs.size();
+        }
+
+        //stack.check(n)
+        stack.pushN(varargs, n);
+    }
+
+    @Override
+    public void loadProto(int idx) {
+        Prototype proto = stack.closure.proto.getProtos()[idx];
+        stack.push(new Closure(proto));
     }
 }

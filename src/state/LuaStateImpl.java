@@ -192,6 +192,13 @@ public class LuaStateImpl implements LuaState, LuaVM {
     }
 
     @Override
+    public boolean isJavaFunction(int idx) {
+        Object val = stack.get(idx);
+        return val instanceof Closure
+                && ((Closure) val).javaFunc != null;
+    }
+
+    @Override
     public boolean toBoolean(int idx) {
         return LuaValue.toBoolean(stack.get(idx));
     }
@@ -239,6 +246,14 @@ public class LuaStateImpl implements LuaState, LuaVM {
     }
 
     @Override
+    public JavaFunction toJavaFunction(int idx) {
+        Object val = stack.get(idx);
+        return val instanceof Closure
+                ? ((Closure) val).javaFunc
+                : null;
+    }
+
+    @Override
     public void pushNil() {
         stack.push(null);
     }
@@ -261,6 +276,11 @@ public class LuaStateImpl implements LuaState, LuaVM {
     @Override
     public void pushString(String s) {
         stack.push(s);
+    }
+
+    @Override
+    public void pushJavaFunction(JavaFunction f) {
+        stack.push(new Closure(f));
     }
 
     @Override

@@ -370,7 +370,7 @@ public class Instructions {
     }
 
     // return R(A)(R(A+1), ... ,R(A+B-1))
-    public static void tailCell(int i, LuaVM vm) {
+    public static void tailCall(int i, LuaVM vm) {
         int a = Instruction.getA(i) + 1;
         int b = Instruction.getB(i);
 

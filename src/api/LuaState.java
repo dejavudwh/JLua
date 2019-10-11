@@ -27,18 +27,21 @@ public interface LuaState {
     boolean isTable(int idx);
     boolean isThread(int idx);
     boolean isFunction(int idx);
+    boolean isJavaFunction(int idx);
     boolean toBoolean(int idx);
     long toInteger(int idx);
     Long toIntegerX(int idx);
     double toNumber(int idx);
     Double toNumberX(int idx);
     String toString(int idx);
+    JavaFunction toJavaFunction(int idx);
     /* push functions (Java -> stack); */
     void pushNil();
     void pushBoolean(boolean b);
     void pushInteger(long n);
     void pushNumber(double n);
     void pushString(String s);
+    void pushJavaFunction(JavaFunction f);
     /* comparison and arithmetic functions */
     void arith(ArithOp op);
     boolean compare(int idx1, int idx2, CmpOp op);

@@ -272,12 +272,26 @@ public class Instructions {
         int c = Instruction.getC(i);
         c = c > 0 ? c - 1 : Instruction.getAx(vm.fetch());
 
+        boolean bIsZero = b == 0;
+        if (bIsZero) {
+            b = ((int) vm.toInteger(-1)) - a - 1;
+            vm.pop(1);
+        }
+
         vm.checkStack(1);
         int idx = c * LFIELDS_PER_FLUSH;
         for (int j = 1; j <= b; j++) {
             idx++;
             vm.pushValue(a + j);
             vm.setI(a, idx);
+        }
+
+        if (bIsZero) {
+            for (int j = vm.registerCount() + 1; j <= vm.getTop(); j++) {
+                idx++;
+                vm.pushValue(j);
+                vm.setI(a, idx);
+            }
         }
     }
 

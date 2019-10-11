@@ -3,6 +3,9 @@ package vm;
 import api.ArithOp;
 import api.CmpOp;
 import api.LuaVM;
+import state.LuaStack;
+
+import javax.print.DocFlavor;
 
 import static api.ArithOp.*;
 import static api.CmpOp.*;
@@ -275,6 +278,64 @@ public class Instructions {
             idx++;
             vm.pushValue(a + j);
             vm.setI(a, idx);
+        }
+    }
+
+    /* call */
+
+    // R(A) := closure(KPROTO[Bx])
+    public static void closure(int i, LuaVM vm) {
+        int a = Instruction.getA(i) + 1;
+        int bx = Instruction.getBx(i);
+        vm.loadProto(bx);
+        vm.replace(a);
+    }
+
+    // R(A), ... ,R(A+C-2) := R(A)(R(A+1), ... ,R(A+B-1))
+    public static void call(int i, LuaVM vm) {
+        int a = Instruction.getA(i) + 1;
+        int b = Instruction.getB(i);
+        int c = Instruction.getC(i);
+        int nArgs = pushFunAndArgs(a, b, vm);
+        vm.call(nArgs, c - 1);
+        popResults(a, c, vm);
+    }
+
+    private static int pushFunAndArgs(int a, int b, LuaVM vm) {
+        if (b >= 1) {
+            vm.checkStack(b);
+            for (int i = a; i < a + b; i++) {
+                vm.pushValue(i);
+            }
+            return b - 1;
+        } else {
+            fixStack(a, vm);
+            return vm.getTop() - vm.registerCount() - 1;
+        }
+    }
+
+    private static void fixStack(int a, LuaVM vm) {
+        int x = (int) vm.toInteger(-1);
+        vm.pop(1);
+
+        vm.checkStack(x - a);
+        for (int i = a; i < x; i++) {
+            vm.pushValue(i);
+        }
+        vm.rotate(vm.registerCount()+1, x-a);
+    }
+
+    private static void popResults(int a, int c, LuaVM vm) {
+        if (c == 1) {
+            // no results no handle
+        } else if (c > 1) {
+            for (int i = a + c - 2; i >= a; i--) {
+                vm.replace(i);
+            }
+        } else {
+            // leave results for Call to call
+            vm.checkStack(1);
+            vm.pushInteger(a);
         }
     }
 }

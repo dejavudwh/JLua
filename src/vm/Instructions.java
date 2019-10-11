@@ -296,12 +296,12 @@ public class Instructions {
         int a = Instruction.getA(i) + 1;
         int b = Instruction.getB(i);
         int c = Instruction.getC(i);
-        int nArgs = pushFunAndArgs(a, b, vm);
+        int nArgs = pushFuncAndArgs(a, b, vm);
         vm.call(nArgs, c - 1);
         popResults(a, c, vm);
     }
 
-    private static int pushFunAndArgs(int a, int b, LuaVM vm) {
+    private static int pushFuncAndArgs(int a, int b, LuaVM vm) {
         if (b >= 1) {
             vm.checkStack(b);
             for (int i = a; i < a + b; i++) {
@@ -337,5 +337,53 @@ public class Instructions {
             vm.checkStack(1);
             vm.pushInteger(a);
         }
+    }
+
+    // return R(A), ... , R(A+B-2)
+    public static void _return(int i, LuaVM vm) {
+        int a = Instruction.getA(i) + 1;
+        int b = Instruction.getB(i);
+        if (b == 1) {
+            // no result
+        } else if (b > 1) {
+            vm.checkStack(b - 1);
+            for (int j = a; j <= a+b-2; j++) {
+                vm.pushValue(j);
+            }
+        } else {
+            fixStack(a, vm);
+        }
+    }
+
+    // return R(A)(R(A+1), ... ,R(A+B-1))
+    public static void tailCell(int i, LuaVM vm) {
+        int a = Instruction.getA(i) + 1;
+        int b = Instruction.getB(i);
+
+        int c = 0;
+        int nArgs = pushFuncAndArgs(a, b, vm);
+        vm.call(nArgs, c - 1);
+        popResults(a, c, vm);
+    }
+
+    // R(A), R(A+1), ..., R(A+B-2) = vararg
+    public static void vararg(int i, LuaVM vm) {
+        int a = Instruction.getA(i) + 1;
+        int b = Instruction.getB(i);
+        if (b != 1) { // b==0 or b>1
+            vm.loadVararg(b - 1);
+            popResults(a, b, vm);
+        }
+    }
+
+    // R(A+1) := R(B); R(A) := R(B)[RK(C)]
+    public static void self(int i, LuaVM vm) {
+        int a = Instruction.getA(i) + 1;
+        int b = Instruction.getB(i) + 1;
+        int c = Instruction.getC(i);
+        vm.copy(b, a + 1);
+        vm.getRK(c);
+        vm.getTable(b);
+        vm.replace(a);
     }
 }

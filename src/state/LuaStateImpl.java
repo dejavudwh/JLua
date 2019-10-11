@@ -1,13 +1,17 @@
 package state;
 
 import api.*;
+import binchunk.BinaryChunk;
 import binchunk.Prototype;
+import vm.Instruction;
+import vm.OpCode;
 
 import java.util.Collections;
 import java.util.List;
 
 import static api.LuaType.*;
 import static api.ArithOp.*;
+import static api.ThreadStatus.*;
 
 /*
     Lua interpreter state
@@ -357,6 +361,68 @@ public class LuaStateImpl implements LuaState, LuaVM {
             return;
         }
         throw new RuntimeException("not a table!");
+    }
+
+    /* 'load' and 'call' functions */
+
+    @Override
+    public ThreadStatus load(byte[] chunk, String chunkName, String mode) {
+        Prototype proto = BinaryChunk.undump(chunk);
+        stack.push(new Closure(proto));
+        return LUA_OK;
+    }
+
+    @Override
+    public void call(int nArgs, int nResults) {
+        Object val = stack.get(-(nArgs + 1));
+        if (val instanceof Closure) {
+            Closure c = (Closure) val;
+            System.out.printf("call %s<%d,%d>\n", c.proto.getSource(),
+                    c.proto.getLineDefined(), c.proto.getLastLineDefined());
+            callLuaClosure(nArgs, nResults, c);
+        } else {
+            throw new RuntimeException("not function!");
+        }
+    }
+
+    private void callLuaClosure(int nArgs, int nResults, Closure c) {
+        // Gets the information provided by the compiler
+        int nRegs = c.proto.getMaxStackSize();
+        int nParams = c.proto.getNumParams();
+        boolean isVararg = c.proto.getIsVararg() == 1;
+
+        LuaStack newStack = new LuaStack(/*nRegs + 20*/);
+        newStack.closure = c;
+
+        List<Object> funcAndArgs = stack.popN(nArgs + 1);
+        // Create call frame
+        newStack.pushN(funcAndArgs.subList(1, funcAndArgs.size()), nParams);
+        if (nArgs > nParams && isVararg) {
+            newStack.varargs = funcAndArgs.subList(nParams + 1, funcAndArgs.size());
+        }
+
+        // run
+        pushLuaStack(newStack);
+        setTop(nRegs);
+        runLuaClosure();
+        popLuaStack();
+
+        // return
+        if (nResults != 0) {
+            List<Object> results = newStack.popN(newStack.top() - nRegs);
+            stack.pushN(results, nResults);
+        }
+    }
+
+    private void runLuaClosure() {
+        for (;;) {
+            int i = fetch();
+            OpCode opCode = Instruction.getOpCode(i);
+            opCode.getAction().execute(i, this);
+            if (opCode == OpCode.RETURN) {
+                break;
+            }
+        }
     }
 
     /* miscellaneous functions */

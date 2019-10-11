@@ -397,11 +397,37 @@ public class LuaStateImpl implements LuaState, LuaVM {
         Object val = stack.get(-(nArgs + 1));
         if (val instanceof Closure) {
             Closure c = (Closure) val;
-            System.out.printf("call %s<%d,%d>\n", c.proto.getSource(),
-                    c.proto.getLineDefined(), c.proto.getLastLineDefined());
-            callLuaClosure(nArgs, nResults, c);
+            if (c.proto != null) {
+                callLuaClosure(nArgs, nResults, c);
+            } else {
+                callJavaClosure(nArgs, nResults, c);
+            }
         } else {
             throw new RuntimeException("not function!");
+        }
+    }
+
+    private void callJavaClosure(int nArgs, int nResults, Closure c) {
+        LuaStack newStack = new LuaStack(/*nRegs+LUA_MINSTACK*/);
+        newStack.state = this;
+        newStack.closure = c;
+
+        // pass args, pop func
+        if (nArgs > 0) {
+            newStack.pushN(stack.popN(nArgs), nArgs);
+        }
+        stack.pop();
+
+        // run closure
+        pushLuaStack(newStack);
+        int r = c.javaFunc.invoke(this);
+        popLuaStack();
+
+        // return results
+        if (nResults != 0) {
+            List<Object> results = newStack.popN(r);
+            //stack.check(results.size())
+            stack.pushN(results, nResults);
         }
     }
 

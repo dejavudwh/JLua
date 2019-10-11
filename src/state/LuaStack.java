@@ -14,6 +14,7 @@ public class LuaStack {
 
     /* Function call support */
     Closure closure;
+    LuaStateImpl state;
     List<Object> varargs;
     int pc;
 

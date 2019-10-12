@@ -2,6 +2,11 @@ package api;
 
 public interface LuaState {
 
+    int LUA_MINSTACK = 20;
+    int LUAI_MAXSTACK = 1000000;
+    int LUA_REGISTRYINDEX = -LUAI_MAXSTACK - 1000;
+    long LUA_RIDX_GLOBALS = 2;
+
     /* basic stack manipulation */
     int getTop();
     int absIndex(int idx);

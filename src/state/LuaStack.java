@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import static api.LuaState.LUA_REGISTRYINDEX;
+
 /*
     The Lua stack as a bridge between the host language and the Lua language
  */
@@ -39,15 +41,21 @@ public class LuaStack {
     }
 
     int absIndex(int idx) {
-        return idx >= 0 ? idx : idx + slots.size() + 1;
+        return idx >= 0 || idx <= LUA_REGISTRYINDEX ? idx : idx + slots.size() + 1;
     }
 
     boolean isValid(int idx) {
+        if (idx == LUA_REGISTRYINDEX) {
+            return true;
+        }
         int asbIdx = absIndex(idx);
         return asbIdx > 0 && asbIdx <= slots.size();
     }
 
     Object get(int idx) {
+        if (idx == LUA_REGISTRYINDEX) {
+            return state.registry;
+        }
         int absIdx = absIndex(idx);
         // The index in the lua stack starts at 1
         if (absIdx > 0 && absIdx <= slots.size()) {

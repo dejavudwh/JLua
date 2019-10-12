@@ -18,7 +18,15 @@ import static api.ThreadStatus.*;
  */
 public class LuaStateImpl implements LuaState, LuaVM {
 
+    LuaTable registry = new LuaTable(0, 0);
     private LuaStack stack = new LuaStack();
+
+    public LuaStateImpl() {
+        registry.put(LUA_RIDX_GLOBALS, new LuaTable(0, 0));
+        LuaStack stack = new LuaStack();
+        stack.state = this;
+        pushLuaStack(stack);
+    }
 
     private void pushLuaStack(LuaStack newTop) {
         newTop.prev = this.stack;

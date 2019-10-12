@@ -23,14 +23,13 @@ public class Instructions {
         vm.copy(b, a);
     }
 
-    // pc+=sBx
+    // pc+=sBx if (A) close all upvalues >= R(A-1)
     public static void jmp(int i, LuaVM vm) {
         int a = Instruction.getA(i);
         int sBx = Instruction.getSBx(i);
         vm.addPC(sBx);
         if (a != 0) {
-            //TODO
-            throw new RuntimeException("jmp todo");
+            vm.closeUpvalues(a);
         }
     }
 

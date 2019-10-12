@@ -9,6 +9,7 @@ import vm.OpCode;
 
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 
 import static api.LuaType.*;
@@ -620,6 +621,18 @@ public class LuaStateImpl implements LuaState, LuaVM {
                 }
             } else {
                 closure.upvals[i] = stack.closure.upvals[uvIdx];
+            }
+        }
+    }
+
+    public void closeUpvalues(int a) {
+        if (stack.openuvs != null) {
+            for (Iterator<UpvalueHolder> it = stack.openuvs.values().iterator(); ((Iterator) it).hasNext(); ) {
+                UpvalueHolder uv = it.next();
+                if (uv.index >= a - 1) {
+                    uv.migrate();
+                    it.remove();
+                }
             }
         }
     }

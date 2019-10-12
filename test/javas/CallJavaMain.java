@@ -9,10 +9,11 @@ import java.nio.file.Paths;
 public class CallJavaMain {
 
     public static void main(String[] args) throws Exception {
-        byte[] data = Files.readAllBytes(Paths.get("test/resources/hw.luac"));
+        // closure
+        byte[] data = Files.readAllBytes(Paths.get("test/resources/ct.luac"));
         LuaState ls = new LuaStateImpl();
         ls.register("print", CallJavaMain::print);
-        ls.load(data, "hw.luac", "b");
+        ls.load(data, "ct.luac", "b");
         ls.call(0, 0);
     }
 

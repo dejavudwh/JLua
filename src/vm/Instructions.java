@@ -400,4 +400,17 @@ public class Instructions {
         vm.getTable(b);
         vm.replace(a);
     }
+
+    /* upvalues */
+
+    // R(A) := UpValue[B][RK(C)]
+    public static void getTabUp(int i, LuaVM vm) {
+        int a = Instruction.getA(i) + 1;
+        int c = Instruction.getC(i);
+        vm.pushGlobalTable();
+        vm.getRK(c);
+        vm.getTable(-2);
+        vm.replace(a);
+        vm.pop(1);
+    }
 }

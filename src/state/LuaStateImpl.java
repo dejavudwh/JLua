@@ -3,10 +3,12 @@ package state;
 import api.*;
 import binchunk.BinaryChunk;
 import binchunk.Prototype;
+import binchunk.Upvalue;
 import vm.Instruction;
 import vm.OpCode;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 
 import static api.LuaType.*;
@@ -288,8 +290,25 @@ public class LuaStateImpl implements LuaState, LuaVM {
 
     @Override
     public void pushJavaFunction(JavaFunction f) {
-        stack.push(new Closure(f));
+        stack.push(new Closure(f, 0));
     }
+
+    @Override
+    public void pushJavaClosure(JavaFunction f, int n) {
+        Closure closure = new Closure(f, n);
+        for (int i = n; i > 0; i--) {
+            Object val = stack.pop();
+            closure.upvals[i - 1] = new UpvalueHolder(val);
+        }
+        stack.push(closure);
+    }
+
+    @Override
+    public void pushGlobalTable() {
+        stack.push(registry.get(LUA_RIDX_GLOBALS));
+    }
+
+    /* comparison and arithmetic functions */
 
     @Override
     public void arith(ArithOp op) {
@@ -359,6 +378,12 @@ public class LuaStateImpl implements LuaState, LuaVM {
         return getTable(t, i);
     }
 
+    @Override
+    public LuaType getGlobal(String name) {
+        Object t = registry.get(LUA_RIDX_GLOBALS);
+        return getTable(t, name);
+    }
+
     /* set function (Stack -> Lua) */
 
     @Override
@@ -383,6 +408,20 @@ public class LuaStateImpl implements LuaState, LuaVM {
         setTable(t, i, v);
     }
 
+    @Override
+    public void setGlobal(String name) {
+        Object t = registry.get(LUA_RIDX_GLOBALS);
+        Object v = stack.pop();
+        setTable(t, name, v);
+    }
+
+    @Override
+    public void register(String name, JavaFunction f) {
+        // Register Java functions in Lua
+        pushJavaFunction(f);
+        setGlobal(name);
+    }
+
     private void setTable(Object t, Object k, Object v) {
         if (t instanceof LuaTable) {
             ((LuaTable) t).put(k, v);
@@ -396,7 +435,12 @@ public class LuaStateImpl implements LuaState, LuaVM {
     @Override
     public ThreadStatus load(byte[] chunk, String chunkName, String mode) {
         Prototype proto = BinaryChunk.undump(chunk);
-        stack.push(new Closure(proto));
+        Closure closure = new Closure(proto);
+        stack.push(closure);
+        if (proto.getUpvalues().length > 0) {
+            Object env = registry.get(LUA_RIDX_GLOBALS);
+            closure.upvals[0] = new UpvalueHolder(env); // todo
+        }
         return LUA_OK;
     }
 
@@ -558,6 +602,25 @@ public class LuaStateImpl implements LuaState, LuaVM {
     @Override
     public void loadProto(int idx) {
         Prototype proto = stack.closure.proto.getProtos()[idx];
-        stack.push(new Closure(proto));
+        Closure closure = new Closure(proto);
+        stack.push(closure);
+
+        for (int i = 0; i < proto.getUpvalues().length; i++) {
+            Upvalue uvInfo = proto.getUpvalues()[i];
+            int uvIdx = uvInfo.getIdx();
+            if (uvInfo.getInstack() == 1) {
+                if (stack.openuvs == null) {
+                    stack.openuvs = new HashMap<>();
+                }
+                if (stack.openuvs.containsKey(uvIdx)) {
+                    closure.upvals[i] = stack.openuvs.get(uvIdx);
+                } else {
+                    closure.upvals[i] = new UpvalueHolder(stack, uvIdx);
+                    stack.openuvs.put(uvIdx, closure.upvals[i]);
+                }
+            } else {
+                closure.upvals[i] = stack.closure.upvals[uvIdx];
+            }
+        }
     }
 }

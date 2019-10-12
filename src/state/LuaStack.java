@@ -3,6 +3,7 @@ package state;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import static api.LuaState.LUA_REGISTRYINDEX;
 
@@ -18,6 +19,7 @@ public class LuaStack {
     Closure closure;
     LuaStateImpl state;
     List<Object> varargs;
+    Map<Integer, UpvalueHolder> openuvs;
     int pc;
 
     /* linked list for implementation of the call stack with linked list */
@@ -45,6 +47,10 @@ public class LuaStack {
     }
 
     boolean isValid(int idx) {
+        if (idx < LUA_REGISTRYINDEX) { // upvalues
+            int uvIdx = LUA_REGISTRYINDEX - idx - 1;
+            return closure != null && uvIdx < closure.upvals.length;
+        }
         if (idx == LUA_REGISTRYINDEX) {
             return true;
         }
@@ -53,6 +59,16 @@ public class LuaStack {
     }
 
     Object get(int idx) {
+        if (idx < LUA_REGISTRYINDEX) { // upvalues
+            int uvIdx = LUA_REGISTRYINDEX - idx - 1;
+            if (closure != null
+                    && closure.upvals.length > uvIdx
+                    && closure.upvals[uvIdx] != null) {
+                return closure.upvals[uvIdx].get();
+            } else {
+                return null;
+            }
+        }
         if (idx == LUA_REGISTRYINDEX) {
             return state.registry;
         }
@@ -65,9 +81,22 @@ public class LuaStack {
         }
     }
 
-    void set(int idx, Object value) {
+    void set(int idx, Object val) {
+        if (idx < LUA_REGISTRYINDEX) { // upvalues
+            int uvIdx = LUA_REGISTRYINDEX - idx - 1;
+            if (closure != null
+                    && closure.upvals.length > uvIdx
+                    && closure.upvals[uvIdx] != null) {
+                closure.upvals[uvIdx].set(val);
+            }
+            return;
+        }
+        if (idx == LUA_REGISTRYINDEX) {
+            state.registry = (LuaTable) val;
+            return;
+        }
         int absIdx = absIndex(idx);
-        slots.set(absIdx - 1, value);
+        slots.set(absIdx - 1, val);
     }
 
     void reverse(int from, int to) {

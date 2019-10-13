@@ -307,6 +307,20 @@ public class LuaStateImpl implements LuaState, LuaVM {
     }
 
     @Override
+    public int rawLen(int idx) {
+        Object val = stack.get(idx);
+        if (val instanceof String) {
+            return ((String) val).length();
+        } else if (val instanceof LuaTable) {
+            return ((LuaTable) val).length();
+        } else {
+            return 0;
+        }
+    }
+
+    /* push function (Java -> Stack); */
+
+    @Override
     public void pushNil() {
         stack.push(null);
     }
@@ -381,6 +395,17 @@ public class LuaStateImpl implements LuaState, LuaVM {
         }
     }
 
+    @Override
+    public boolean rawEqual(int idx1, int idx2) {
+        if (!stack.isValid(idx1) || !stack.isValid(idx2)) {
+            return false;
+        }
+
+        Object a = stack.get(idx1);
+        Object b = stack.get(idx2);
+        return Comparison.eq(a, b, null);
+    }
+
     /* get function (Lua -> Stack) */
 
     @Override
@@ -437,6 +462,19 @@ public class LuaStateImpl implements LuaState, LuaVM {
     }
 
     @Override
+    public LuaType rawGet(int idx) {
+        Object t = stack.get(idx);
+        Object k = stack.pop();
+        return getTable(t, k, true);
+    }
+
+    @Override
+    public LuaType rawGetI(int idx, long i) {
+        Object t = stack.get(idx);
+        return getTable(t, i, true);
+    }
+
+    @Override
     public LuaType getGlobal(String name) {
         Object t = registry.get(LUA_RIDX_GLOBALS);
         return getTable(t, name, false);
@@ -476,6 +514,21 @@ public class LuaStateImpl implements LuaState, LuaVM {
         Object t = stack.get(idx);
         Object v = stack.pop();
         setTable(t, i, v, false);
+    }
+
+    @Override
+    public void rawSet(int idx) {
+        Object t = stack.get(idx);
+        Object v = stack.pop();
+        Object k = stack.pop();
+        setTable(t, k, v, true);
+    }
+
+    @Override
+    public void rawSetI(int idx, long i) {
+        Object t = stack.get(idx);
+        Object v = stack.pop();
+        setTable(t, i, v, true);
     }
 
     @Override

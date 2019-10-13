@@ -59,10 +59,12 @@ public interface LuaState {
     LuaType getField(int idx, String k);
     LuaType getI(int idx, long i);
     LuaType getGlobal(String name);
+    boolean getMetatable(int idx);
     /* set functions (stack -> Lua) */
     void setTable(int idx);
     void setField(int idx, String k);
     void setI(int idx, long i);
+    void setMetatable(int idx);
     void setGlobal(String name);
     void register(String name, JavaFunction f);
     /* 'load' and 'call' functions */

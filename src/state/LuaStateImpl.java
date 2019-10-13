@@ -42,6 +42,26 @@ public class LuaStateImpl implements LuaState, LuaVM {
         top.prev = null;
     }
 
+    /* metatable */
+
+    private LuaTable getMetatable(Object val) {
+        if (val instanceof LuaTable) {
+            return ((LuaTable) val).metatable;
+        }
+        String key = "_MT" + LuaValue.typeOf(val);
+        Object mt = registry.get(key);
+        return mt != null ? (LuaTable) mt : null;
+    }
+
+    private void setMetatable(Object val, LuaTable mt) {
+        if (val instanceof LuaTable) {
+            ((LuaTable) val).metatable = mt;
+            return;
+        }
+        String key = "_MT" + LuaValue.typeOf(val);
+        registry.put(key, mt);
+    }
+
     /* basic stack manipulation */
 
     @Override
@@ -385,6 +405,18 @@ public class LuaStateImpl implements LuaState, LuaVM {
         return getTable(t, name);
     }
 
+    @Override
+    public boolean getMetatable(int idx) {
+        Object val = stack.get(idx);
+        Object mt = getMetatable(val);
+        if (mt != null) {
+            stack.push(mt);
+            return true;
+        } else {
+            return false;
+        }
+    }
+
     /* set function (Stack -> Lua) */
 
     @Override
@@ -421,6 +453,20 @@ public class LuaStateImpl implements LuaState, LuaVM {
         // Register Java functions in Lua
         pushJavaFunction(f);
         setGlobal(name);
+    }
+
+    @Override
+    public void setMetatable(int idx) {
+        Object val = stack.get(idx);
+        Object mtVal = stack.pop();
+
+        if (mtVal == null) {
+            setMetatable(val, null);
+        } else if (mtVal instanceof LuaTable) {
+            setMetatable(val, (LuaTable) mtVal);
+        } else {
+            throw new RuntimeException("set meta table expected!");
+        }
     }
 
     private void setTable(Object t, Object k, Object v) {

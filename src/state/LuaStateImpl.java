@@ -7,6 +7,7 @@ import binchunk.Upvalue;
 import vm.Instruction;
 import vm.OpCode;
 
+import javax.swing.plaf.synth.SynthTextAreaUI;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -605,10 +606,9 @@ public class LuaStateImpl implements LuaState, LuaVM {
     public void call(int nArgs, int nResults) {
         Object val = stack.get(-(nArgs + 1));
         Object f = val instanceof Closure ? val : null;
-
         if (f == null) {
             Object mf = getMetafield(val, "__call");
-            if (mf instanceof  Closure) {
+            if (mf instanceof Closure) {
                 stack.push(f);
                 insert(-(nArgs + 2));
                 nArgs += 1;
@@ -617,7 +617,7 @@ public class LuaStateImpl implements LuaState, LuaVM {
         }
 
         if (f != null) {
-            Closure c = (Closure) val;
+            Closure c = (Closure) f;
             if (c.proto != null) {
                 callLuaClosure(nArgs, nResults, c);
             } else {

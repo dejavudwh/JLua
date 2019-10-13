@@ -62,6 +62,27 @@ public class LuaStateImpl implements LuaState, LuaVM {
         registry.put(key, mt);
     }
 
+    private Object getMetafield(Object val, String fieldName) {
+        LuaTable mt = getMetatable(val);
+        return mt != null ? mt.get(fieldName) : null;
+    }
+
+    Object getMetamethod(Object a, Object b, String mmName) {
+        Object mm = getMetafield(a, mmName);
+        if (mm == null) {
+            mm = getMetafield(b, mmName);
+        }
+        return mm;
+    }
+
+    Object callMetamethod(Object a, Object b, Object mm) {
+        stack.push(mm);
+        stack.push(a);
+        stack.push(b);
+        call(2, 1);
+        return stack.pop();
+    }
+
     /* basic stack manipulation */
 
     @Override
@@ -335,7 +356,7 @@ public class LuaStateImpl implements LuaState, LuaVM {
     public void arith(ArithOp op) {
         Object b = stack.pop();
         Object a = op != LUA_OPUNM && op != LUA_OPBNOT ? stack.pop() : b;
-        Object result = Arithmetic.arith(a, b, op);
+        Object result = Arithmetic.arith(a, b, op, this);
         if (result != null) {
             stack.push(result);
         } else {
@@ -577,11 +598,19 @@ public class LuaStateImpl implements LuaState, LuaVM {
         Object val = stack.get(idx);
         if (val instanceof String) {
             pushInteger(((String) val).length());
-        } else if (val instanceof LuaTable) {
-            pushInteger(((LuaTable) val).length());
-        } else {
-            throw new RuntimeException("length error!");
+            return;
         }
+        Object mm = getMetamethod(val, val, "__len");
+        if (mm != null) {
+            stack.push(callMetamethod(val, val, mm));
+            return;
+        }
+        if (val instanceof LuaTable) {
+            pushInteger(((LuaTable) val).length());
+            return;
+        }
+
+        throw new RuntimeException("length error!");
     }
 
     @Override
@@ -595,6 +624,14 @@ public class LuaStateImpl implements LuaState, LuaVM {
                     String s1 = toString(-2);
                     pop(2);
                     pushString(s1 + s2);
+                    continue;
+                }
+
+                Object b = stack.pop();
+                Object a = stack.pop();
+                Object mm = getMetamethod(a, b, "__concat");
+                if (mm != null) {
+                    stack.push(callMetamethod(a, b, mm));
                     continue;
                 }
 

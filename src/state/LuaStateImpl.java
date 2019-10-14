@@ -692,6 +692,25 @@ public class LuaStateImpl implements LuaState, LuaVM {
         }
     }
 
+    @Override
+    public ThreadStatus pCall(int nArg, int nResults, int msgh) {
+        LuaStack caller = stack;
+        try {
+            call(nArg, nResults);
+            return LUA_OK;
+        } catch (Exception e) {
+            if (msgh != 0) {
+                throw e;
+            }
+            while (stack != caller) {
+                popLuaStack();
+            }
+            // TODO
+            stack.push(e.getMessage());
+            return LUA_ERRRUN;
+        }
+    }
+
     /* miscellaneous functions */
 
     @Override
@@ -756,6 +775,12 @@ public class LuaStateImpl implements LuaState, LuaVM {
             return false;
         }
         throw new RuntimeException("table expected!");
+    }
+
+    @Override
+    public int error() {
+        Object err = stack.pop();
+        throw new RuntimeException(err.toString());
     }
 
     /* LuaVM */

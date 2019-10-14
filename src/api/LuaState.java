@@ -76,8 +76,10 @@ public interface LuaState {
     /* 'load' and 'call' functions (load and run Lua code) */
     ThreadStatus load(byte[] chunk, String chunkName, String mode);
     void call(int nArgs, int nResults);
+    ThreadStatus pCall(int nArgs, int nResults, int msgh);
     /* miscellaneous functions */
     void len(int idx);
     void concat(int n);
     boolean next(int idx);
+    int error();
 }

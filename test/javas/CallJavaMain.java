@@ -1,6 +1,8 @@
 package javas;
 
 import api.LuaState;
+import binchunk.BinaryChunk;
+import binchunk.Prototype;
 import state.LuaStateImpl;
 
 import java.nio.file.Files;
@@ -12,6 +14,8 @@ public class CallJavaMain {
         // closure
         byte[] data = Files.readAllBytes(Paths.get("test/resources/ct.luac"));
         LuaState ls = new LuaStateImpl();
+        Prototype proto = BinaryChunk.undump(data);
+        DecompilingMain.list(proto);
         ls.register("print", CallJavaMain::print);
         ls.load(data, "ct.luac", "b");
         ls.call(0, 0);

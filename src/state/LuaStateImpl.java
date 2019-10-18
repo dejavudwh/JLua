@@ -7,7 +7,6 @@ import binchunk.Upvalue;
 import vm.Instruction;
 import vm.OpCode;
 
-import javax.swing.plaf.synth.SynthTextAreaUI;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -26,6 +25,7 @@ public class LuaStateImpl implements LuaState, LuaVM {
     private LuaStack stack = new LuaStack();
 
     public LuaStateImpl() {
+        // Global variable table
         registry.put(LUA_RIDX_GLOBALS, new LuaTable(0, 0));
         LuaStack stack = new LuaStack();
         stack.state = this;
@@ -146,6 +146,7 @@ public class LuaStateImpl implements LuaState, LuaVM {
             |   |
             ⬇   |
             ⬆   |
+            |   |
             |   |
             ⬇   ⬇
          */

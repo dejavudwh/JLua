@@ -21,7 +21,7 @@ public class BinaryChunk {
     public static Prototype undump(byte[] data) {
         ByteBuffer buf = ByteBuffer.wrap(data).order(ByteOrder.LITTLE_ENDIAN);
         checkHead(buf);
-        buf.get();//跳过 upvalues nums
+        buf.get();// upvalues size
         Prototype mainFunc = new Prototype();
         mainFunc.read(buf, "");
         return mainFunc;

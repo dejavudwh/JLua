@@ -71,7 +71,7 @@ public class Prototype {
             case TAG_NUMBER: return buf.getDouble();
             case TAG_SHORT_STR:
             case TAG_LONG_STR: return BinaryChunk.getLuaString(buf);
-            default: throw new RuntimeException("corrupted!");
+            default: throw new RuntimeException("read constant corrupted!");
         }
     }
 

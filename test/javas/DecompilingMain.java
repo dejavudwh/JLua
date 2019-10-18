@@ -18,7 +18,7 @@ public class DecompilingMain {
         list(proto);
     }
 
-    private static void list(Prototype func) {
+    static void list(Prototype func) {
         printHeader(func);
         printCode(func);
         printDetail(func);

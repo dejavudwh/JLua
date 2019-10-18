@@ -1,4 +1,4 @@
-package javas;
+package javas.vmtest;
 
 import api.LuaState;
 import state.LuaStateImpl;

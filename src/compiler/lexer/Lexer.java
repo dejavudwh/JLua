@@ -146,6 +146,26 @@ public class Lexer {
         return error("unexpected symbol near %c", c);
     }
 
+    public TokenKind lookAhead() {
+        if (cachedNextToken == null) {
+            lineBackup = line;
+            cachedNextToken = nextToken();
+        }
+        return cachedNextToken.getKind();
+    }
+
+    public Token nextIdentifier() {
+        return nextTokenOfKind(TOKEN_IDENTIFIER);
+    }
+
+    public Token nextTokenOfKind(TokenKind kind) {
+        Token token = nextToken();
+        if (token.getKind() != kind) {
+            error("syntax error near '%s'", token.getValue());
+        }
+        return token;
+    }
+
     private void skipWhiteSpaces() {
         while (chunk.length() > 0) {
             if (chunk.startsWith("--")) {

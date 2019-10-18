@@ -1,4 +1,4 @@
-package javas;
+package javas.vmtest;
 
 import binchunk.BinaryChunk;
 import binchunk.LocVar;

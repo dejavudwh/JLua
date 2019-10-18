@@ -5,6 +5,10 @@ public class CharSeq implements CharSequence {
     private String str;
     private int pos;
 
+    CharSeq(String str) {
+        this.str = str;
+    }
+
     @Override
     public int length() {
         return 0;

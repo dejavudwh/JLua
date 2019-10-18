@@ -6,4 +6,9 @@ public class Lexer {
     private String chunkName;
     private int line;
 
+    public Lexer(String chunk, String chunkName) {
+        this.chunk = new CharSeq(chunk);
+        this.chunkName = chunkName;
+        this.line = 1;
+    }
 }

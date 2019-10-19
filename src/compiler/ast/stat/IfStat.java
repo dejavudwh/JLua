@@ -12,6 +12,11 @@ import java.util.List;
 @Setter
 public class IfStat extends Stat {
 
-    private List<Exp> exp;
+    private List<Exp> exps;
     private List<Block> blocks;
+
+    public IfStat(List<Exp> exps, List<Block> blocks) {
+        this.exps = exps;
+        this.blocks = blocks;
+    }
 }

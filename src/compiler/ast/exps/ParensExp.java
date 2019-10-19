@@ -7,7 +7,11 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class parensExp extends PrefixExp {
+public class ParensExp extends PrefixExp {
 
     private Exp exp;
+
+    public ParensExp(Exp exp) {
+        this.exp = exp;
+    }
 }

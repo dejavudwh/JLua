@@ -1,12 +1,15 @@
 package compiler.parser;
 
+import compiler.ast.Block;
 import compiler.ast.Exp;
+import compiler.ast.exps.FuncDefExp;
 import compiler.lexer.Lexer;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import static compiler.lexer.TokenKind.*;
+import static compiler.parser.BlockParser.parseBlock;
 
 public class ExpParser {
 
@@ -41,6 +44,55 @@ public class ExpParser {
             | ‘...’ | functiondef | prefixexp | tableconstructor
     */
     static Exp parseExp(Lexer lexer) {
+        return null;
+    }
 
+    // functiondef ::= function funcbody
+    // funcbody ::= ‘(’ [parlist] ‘)’ block end
+    static FuncDefExp parseFuncDefExp(Lexer lexer) {
+        int line = lexer.line();
+        lexer.nextTokenOfKind(TOKEN_SEP_LPAREN);
+        List<String> parList = parseParList(lexer);
+        lexer.nextTokenOfKind(TOKEN_SEP_RPAREN);
+        Block block = parseBlock(lexer);
+        lexer.nextTokenOfKind(TOKEN_KW_END);
+        int lastLine = lexer.line();
+
+        FuncDefExp fdExp = new FuncDefExp();
+        fdExp.setLine(line);
+        fdExp.setLastLine(lastLine);
+        fdExp.setIsVararg(parList.remove("..."));
+        fdExp.setParList(parList);
+        fdExp.setBlock(block);
+        return fdExp;
+    }
+
+    // [parlist]
+    // parlist ::= namelist [',' '...'] | '...'
+    private static List<String> parseParList(Lexer lexer) {
+        List<String> names = new ArrayList<>();
+
+        switch (lexer.lookAhead()) {
+            case TOKEN_SEP_RPAREN:
+                return names;
+            case TOKEN_VARARG:
+                lexer.nextToken();
+                names.add("...");
+                return names;
+        }
+
+        names.add(lexer.nextIdentifier().getValue());
+        while (lexer.lookAhead() == TOKEN_SEP_COMMA) {
+            lexer.nextToken();
+            if (lexer.lookAhead() == TOKEN_IDENTIFIER) {
+                names.add(lexer.nextIdentifier().getValue());
+            } else {
+                lexer.nextTokenOfKind(TOKEN_VARARG);
+                names.add("...");
+                break;
+            }
+        }
+
+        return names;
     }
 }

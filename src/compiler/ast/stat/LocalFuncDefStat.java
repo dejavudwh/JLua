@@ -20,4 +20,9 @@ public class LocalFuncDefStat extends Stat {
 
     private String name;
     private FuncDefExp exp;
+
+    public LocalFuncDefStat(String name, FuncDefExp exp) {
+        this.name = name;
+        this.exp = exp;
+    }
 }

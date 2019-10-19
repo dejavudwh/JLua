@@ -3,6 +3,7 @@ package compiler.parser;
 import compiler.ast.Block;
 import compiler.ast.Exp;
 import compiler.ast.Stat;
+import compiler.ast.exps.FuncDefExp;
 import compiler.ast.exps.IntegerExp;
 import compiler.ast.exps.TrueExp;
 import compiler.ast.stat.*;
@@ -15,6 +16,8 @@ import static compiler.lexer.TokenKind.*;
 import static compiler.parser.BlockParser.parseBlock;
 import static compiler.parser.ExpParser.parseExpList;
 import static compiler.parser.ExpParser.parseExp;
+import static compiler.parser.ExpParser.parseFuncDefExp;
+import static compiler.parser.PrefixExpParser.parsePrefixExp;
 
 public class StatParser {
 
@@ -202,10 +205,42 @@ public class StatParser {
     private static Stat parseFuncDefStat(Lexer lexer) {
     }
 
+    // local function Name funcbody
+    // local namelist ['=' explist]
     private static Stat parseLocalAssignOrFuncDefStat(Lexer lexer) {
+        lexer.nextTokenOfKind(TOKEN_KW_LOCAL);
+        if (lexer.lookAhead() == TOKEN_KW_FUNCTION) {
+            return finishLocalFuncDefStat(lexer);
+        } else {
+            return finishLocalVarDeclStat(lexer);
+        }
     }
 
+    // local function Name funcbody
+    private static LocalFuncDefStat finishLocalFuncDefStat(Lexer lexer) {
+        lexer.nextTokenOfKind(TOKEN_KW_FUNCTION);
+        String name = lexer.nextIdentifier().getValue();
+        FuncDefExp fdExp = parseFuncDefExp(lexer);
+        return new LocalFuncDefStat(name, fdExp);
+    }
+
+    // local namelist [‘=’ explist]
+    private static LocalVarDeclStat finishLocalVarDeclStat(Lexer lexer) {
+        String name0 = lexer.nextIdentifier().getValue();
+        List<String> nameList = finishNameList(lexer, name0);
+        List<Exp> expList = null;
+        if (lexer.lookAhead() == TOKEN_OP_ASSIGN) {
+            lexer.nextToken();
+            expList = parseExpList(lexer);
+        }
+        int lastLine = lexer.line();
+        return new LocalVarDeclStat(lastLine, nameList, expList);
+    }
+
+    // varlist '=' explist
+    // functioncall
     private static Stat parseAssignOrFuncCallStat(Lexer lexer) {
+        Exp prefixExp = parsePrefixExp(lexer);
     }
 
 }

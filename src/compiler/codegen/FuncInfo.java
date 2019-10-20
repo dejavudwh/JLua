@@ -216,6 +216,35 @@ public class FuncInfo {
         return -1;
     }
 
+    void closeOpenUpvals(int line) {
+        int a = getJmpArgA();
+        if (a > 0) {
+            emitJmp(line, a, 0);
+        }
+    }
+
+    int getJmpArgA() {
+        boolean hasCapturedLocVars = false;
+        int minSlotOfLocVars = maxRegs;
+        for (LocVarInfo locVar : locNames.values()) {
+            if (locVar.scopeLv == scopeLv) {
+                for (LocVarInfo v = locVar; v != null && v.scopeLv == scopeLv; v = v.prev) {
+                    if (v.captured) {
+                        hasCapturedLocVars = true;
+                    }
+                    if (v.slot < minSlotOfLocVars && v.name.charAt(0) != '(') {
+                        minSlotOfLocVars = v.slot;
+                    }
+                }
+            }
+        }
+        if (hasCapturedLocVars) {
+            return minSlotOfLocVars + 1;
+        } else {
+            return 0;
+        }
+    }
+
     /* code */
 
     int pc() {

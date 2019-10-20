@@ -3,14 +3,15 @@ package compiler.parser;
 import compiler.ast.Block;
 import compiler.ast.Exp;
 import compiler.ast.Stat;
-import compiler.ast.exps.FuncDefExp;
-import compiler.ast.exps.IntegerExp;
-import compiler.ast.exps.TrueExp;
+import compiler.ast.exps.*;
 import compiler.ast.stat.*;
 import compiler.lexer.Lexer;
+import compiler.lexer.Token;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import static compiler.lexer.TokenKind.*;
 import static compiler.parser.BlockParser.parseBlock;
@@ -202,7 +203,50 @@ public class StatParser {
         return names;
     }
 
+    // function funcname funcbody
+    // funcname ::= Name {‘.’ Name} [‘:’ Name]
+    // funcbody ::= ‘(’ [parlist] ‘)’ block end
+    // parlist ::= namelist [‘,’ ‘...’] | ‘...’
+    // namelist ::= Name {‘,’ Name}
     private static Stat parseFuncDefStat(Lexer lexer) {
+        lexer.nextTokenOfKind(TOKEN_KW_FUNCTION);
+        Map<Exp, Boolean> map = parseFuncName(lexer);
+        Exp fnExp = map.keySet().iterator().next();
+        boolean hasColon = map.values().iterator().next();
+        FuncDefExp fdExp = parseFuncDefExp(lexer);
+        if (hasColon) {
+            if (fdExp.getParList() == null) {
+                fdExp.setParList(new ArrayList<>());
+            }
+            fdExp.getParList().add(0, "self");
+        }
+
+        return new AssignStat(fdExp.getLastLine(),
+                Collections.singletonList(fnExp),
+                Collections.singletonList(fdExp));
+    }
+
+    // funcname ::= Name {',' Name} [':' Name]
+    private static Map<Exp, Boolean> parseFuncName(Lexer lexer) {
+        Token id = lexer.nextIdentifier();
+        Exp exp = new NameExp(id.getLine(), id.getValue());
+        boolean hasColon = false;
+
+        while (lexer.lookAhead() == TOKEN_SEP_DOT) {
+            lexer.nextToken();
+            id = lexer.nextIdentifier();
+            Exp idx = new StringExp(id);
+            exp = new TableAccessExp(id.getLine(), exp, idx);
+        }
+        if (lexer.lookAhead() == TOKEN_SEP_COLON) {
+            lexer.nextToken();
+            id = lexer.nextIdentifier();
+            Exp idx = new StringExp(id);
+            exp = new TableAccessExp(id.getLine(), exp, idx);
+            hasColon = true;
+        }
+
+        return Collections.singletonMap(exp, hasColon);
     }
 
     // local function Name funcbody
@@ -241,6 +285,40 @@ public class StatParser {
     // functioncall
     private static Stat parseAssignOrFuncCallStat(Lexer lexer) {
         Exp prefixExp = parsePrefixExp(lexer);
+        if (prefixExp instanceof FuncCallExp) {
+            return new FuncCallStat((FuncCallExp) prefixExp);
+        } else {
+            return parseAssignStat(lexer, prefixExp);
+        }
+    }
+
+    // varlist '=' exlist |
+    private static AssignStat parseAssignStat(Lexer lexer, Exp var0) {
+        List<Exp> varList = finishVarList(lexer, var0);
+        lexer.nextTokenOfKind(TOKEN_OP_ASSIGN);
+        List<Exp> expList = parseExpList(lexer);
+        int lastLine = lexer.line();
+        return new AssignStat(lastLine, varList, expList);
+    }
+
+    // varlist ::= var {',' var}
+    private static List<Exp> finishVarList(Lexer lexer, Exp var0) {
+        List<Exp> vars = new ArrayList<>();
+        while (lexer.lookAhead() == TOKEN_SEP_COMMA) {
+            lexer.nextToken();
+            Exp exp = parsePrefixExp(lexer);
+            vars.add(checkVar(lexer, exp));
+        }
+        return vars;
+    }
+
+    // var ::=  Name | prefixexp ‘[’ exp ‘]’ | prefixexp ‘.’ Name
+    private static Exp checkVar(Lexer lexer, Exp exp) {
+        if (exp instanceof NameExp || exp instanceof TableAccessExp) {
+            return exp;
+        }
+        lexer.nextTokenOfKind(null); // trigger error
+        throw new RuntimeException("unreachable!");
     }
 
 }

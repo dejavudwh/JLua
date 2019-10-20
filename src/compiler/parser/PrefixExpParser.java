@@ -116,5 +116,9 @@ public class PrefixExpParser {
                 return Collections.singletonList(new StringExp(str));
         }
     }
+
+    // tableconstructor ::= ‘{’ [fieldlist] ‘}’
+    static TableConstructorExp parseTableConstructorExp(Lexer lexer) {
+
     }
 }

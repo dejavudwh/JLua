@@ -11,4 +11,9 @@ import java.util.List;
 public class ConcatExp extends Exp {
 
     private List<Exp> exps;
+
+    public ConcatExp(int line, List<Exp> exps) {
+        setLine(line);
+        this.exps = exps;
+    }
 }

@@ -12,6 +12,7 @@ import java.util.List;
 import static compiler.lexer.TokenKind.*;
 import static compiler.parser.ExpParser.parseExp;
 import static compiler.parser.ExpParser.parseExpList;
+import static compiler.parser.ExpParser.parseTableConstructorExp;
 
 public class PrefixExpParser {
 
@@ -115,10 +116,5 @@ public class PrefixExpParser {
                 Token str = lexer.nextTokenOfKind(TOKEN_STRING);
                 return Collections.singletonList(new StringExp(str));
         }
-    }
-
-    // tableconstructor ::= ‘{’ [fieldlist] ‘}’
-    static TableConstructorExp parseTableConstructorExp(Lexer lexer) {
-
     }
 }

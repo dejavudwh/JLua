@@ -5,6 +5,8 @@ import compiler.ast.Exp;
 import compiler.ast.exps.*;
 import compiler.lexer.Lexer;
 import compiler.lexer.Token;
+import compiler.lexer.TokenKind;
+import javafx.scene.control.Tab;
 import number.LuaNumber;
 
 import java.util.ArrayList;
@@ -242,6 +244,66 @@ public class ExpParser {
             default: // prefixexp
                 return parsePrefixExp(lexer);
         }
+    }
+
+    // tableconstructor ::= '{' [fieldlist] '}'
+    static TableConstructorExp parseTableConstructorExp(Lexer lexer) {
+        TableConstructorExp tcExp = new TableConstructorExp();
+        tcExp.setLine(lexer.line());
+        lexer.nextTokenOfKind(TOKEN_SEP_LCURLY);
+        parseFieldList(lexer, tcExp);
+        lexer.nextTokenOfKind(TOKEN_SEP_RCURLY);
+        tcExp.setLastLine(lexer.line());
+
+        return tcExp;
+    }
+
+    // fieldlist ::= field {fieldsep field} [fieldsep]
+    private static void parseFieldList(Lexer lexer, TableConstructorExp tcExp) {
+        if (lexer.lookAhead() != TOKEN_SEP_RCURLY) {
+            parseField(lexer, tcExp);
+
+            while (isFieldSep(lexer.lookAhead())) {
+                lexer.nextToken();
+                if (lexer.lookAhead() != TOKEN_SEP_RCURLY) {
+                    parseField(lexer, tcExp);
+                } else {
+                    break;
+                }
+            }
+        }
+    }
+
+    // field ::= '[' exp ']' '=' exp | Name '=' exp | exp
+    private static void parseField(Lexer lexer, TableConstructorExp tcExp) {
+        if (lexer.lookAhead() == TOKEN_SEP_LBRACK) {
+            lexer.nextToken();
+            tcExp.addKey(parseExp(lexer));
+            lexer.nextTokenOfKind(TOKEN_SEP_RBRACK);
+            lexer.nextTokenOfKind(TOKEN_OP_ASSIGN);
+            tcExp.addVal(parseExp(lexer));
+
+            return;
+        }
+
+        Exp exp = parseExp(lexer);
+        if (exp instanceof NameExp) {
+            if (lexer.lookAhead() == TOKEN_OP_ASSIGN) {
+                // Name ‘=’ exp => ‘[’ LiteralString ‘]’ = exp
+                tcExp.addKey(new StringExp(exp.getLine(), ((NameExp) exp).getName()));
+                lexer.nextToken();
+                tcExp.addVal(parseExp(lexer));
+                return;
+            }
+        }
+
+        tcExp.addKey(null);
+        tcExp.addVal(exp);
+    }
+
+    // fieldsep ::= ‘,’ | ‘;’
+    private static boolean isFieldSep(TokenKind kind) {
+        return kind == TOKEN_SEP_COMMA || kind == TOKEN_SEP_SEMI;
     }
 
     private static Exp parseNumberExp(Lexer lexer) {

@@ -1,7 +1,11 @@
 package compiler.ast.exps;
 
 import compiler.ast.Exp;
+import lombok.Getter;
+import lombok.Setter;
 
+@Getter
+@Setter
 public class IntegerExp extends Exp {
 
     private long val;

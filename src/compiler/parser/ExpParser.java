@@ -2,13 +2,16 @@ package compiler.parser;
 
 import compiler.ast.Block;
 import compiler.ast.Exp;
+import compiler.ast.exps.BinopExp;
 import compiler.ast.exps.FuncDefExp;
 import compiler.lexer.Lexer;
+import compiler.lexer.Token;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import static compiler.lexer.TokenKind.*;
+import static compiler.parser.Optimizer.*;
 import static compiler.parser.BlockParser.parseBlock;
 
 public class ExpParser {
@@ -44,7 +47,23 @@ public class ExpParser {
             | ‘...’ | functiondef | prefixexp | tableconstructor
     */
     static Exp parseExp(Lexer lexer) {
-        return null;
+        return parseExp12(lexer);
+    }
+
+    // or
+    private static Exp parseExp12(Lexer lexer) {
+        Exp exp = parseExp11(lexer);
+        while (lexer.lookAhead() == TOKEN_OP_OR) {
+            Token op = lexer.nextToken();
+            BinopExp lor = new BinopExp(op, exp, parseExp11(lexer));
+            exp = optimizeLogicalOr(lor);
+        }
+        return exp;
+    }
+
+    // and
+    private static Exp parseExp11(Lexer lexer) {
+
     }
 
     // functiondef ::= function funcbody

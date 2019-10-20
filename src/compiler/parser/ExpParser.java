@@ -22,6 +22,7 @@ public class ExpParser {
     // explist ::= exp {',' exp}
     static List<Exp> parseExpList(Lexer lexer) {
         List<Exp> exps = new ArrayList<>();
+        exps.add(parseExp(lexer));
         while (lexer.lookAhead() == TOKEN_SEP_COMMA) {
             lexer.nextToken();
             exps.add(parseExp(lexer));

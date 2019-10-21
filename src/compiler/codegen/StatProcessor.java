@@ -44,6 +44,11 @@ public class StatProcessor {
         }
     }
 
+    private static void processLocalFuncDefStat(FuncInfo fi, LocalFuncDefStat node) {
+        int r = fi.addLocVar(node.getName(), fi.pc()+2);
+        processFuncDefExp(fi, node.getExp(), r);
+    }
+
     private static void processFuncCallStat(FuncInfo fi, FuncCallStat node) {
         int r = fi.allocReg();
         processFuncCallExp(fi, node.getExp(), r, 0);
@@ -76,10 +81,10 @@ public class StatProcessor {
         fi.enterScope(true);
         processBlock(fi, node.getBlock());
         fi.closeOpenUpvals(node.getBlock().getLastLine());
-        fi.emitJmp(node.getBlock().getLastLine(), 0, pcBeforeExp - fi.pc() - 1);
+        fi.emitJmp(node.getBlock().getLastLine(), 0, pcBeforeExp-fi.pc()-1);
         fi.exitScope(fi.pc());
 
-        fi.fixSbx(pcJmpToEnd, fi.pc() - pcJmpToEnd);
+        fi.fixSbx(pcJmpToEnd, fi.pc()-pcJmpToEnd);
     }
 
     private static void processRepeatStat(FuncInfo fi, RepeatStat node) {
@@ -91,9 +96,10 @@ public class StatProcessor {
         int oldRegs = fi.usedRegs;
         int a = expToOpArg(fi, node.getExp(), ARG_REG).arg;
         fi.usedRegs = oldRegs;
+
         int line = ExpHelper.lastLineOf(node.getExp());
         fi.emitTest(line, a, 0);
-        fi.emitJmp(line, fi.getJmpArgA(), pcBeforeBlock - fi.pc() - 1);
+        fi.emitJmp(line, fi.getJmpArgA(), pcBeforeBlock-fi.pc()-1);
         fi.closeOpenUpvals(line);
 
         fi.exitScope(fi.pc() + 1);
@@ -106,7 +112,7 @@ public class StatProcessor {
         for (int i = 0; i < node.getExps().size(); i++) {
             Exp exp = node.getExps().get(i);
             if (pcJmpToNextExp >= 0) {
-                fi.fixSbx(pcJmpToNextExp, fi.pc() - pcJmpToNextExp);
+                fi.fixSbx(pcJmpToNextExp, fi.pc()-pcJmpToNextExp);
             }
 
             int oldRegs = fi.usedRegs;
@@ -122,7 +128,7 @@ public class StatProcessor {
             processBlock(fi, block);
             fi.closeOpenUpvals(block.getLastLine());
             fi.exitScope(fi.pc() + 1);
-            if (i < node.getExps().size() - 1) {
+            if (i < node.getExps().size()-1) {
                 pcJmpToEnds[i] = fi.emitJmp(block.getLastLine(), 0, 0);
             } else {
                 pcJmpToEnds[i] = pcJmpToNextExp;
@@ -130,7 +136,7 @@ public class StatProcessor {
         }
 
         for (int pc : pcJmpToEnds) {
-            fi.fixSbx(pc, fi.pc() - pc);
+            fi.fixSbx(pc, fi.pc()-pc);
         }
     }
 
@@ -145,7 +151,7 @@ public class StatProcessor {
                 Arrays.asList(forIndexVar, forLimitVar, forStepVar),
                 Arrays.asList(node.getInitExp(), node.getLimitExp(), node.getStepExp()));
         processLocalVarDeclStat(fi, lvdStat);
-        fi.addLocVar(node.getVarName(), fi.pc() + 2);
+        fi.addLocVar(node.getVarName(), fi.pc()+2);
 
         int a = fi.usedRegs - 4;
         int pcForPrep = fi.emitForPrep(node.getLineOfDo(), a, 0);
@@ -153,8 +159,8 @@ public class StatProcessor {
         fi.closeOpenUpvals(node.getBlock().getLastLine());
         int pcForLoop = fi.emitForLoop(node.getLineOfFor(), a, 0);
 
-        fi.fixSbx(pcForPrep, pcForLoop - pcForPrep - 1);
-        fi.fixSbx(pcForLoop, pcForPrep - pcForLoop);
+        fi.fixSbx(pcForPrep, pcForLoop-pcForPrep-1);
+        fi.fixSbx(pcForLoop, pcForPrep-pcForLoop);
 
         fi.exitScope(fi.pc());
         fi.fixEndPC(forIndexVar, 1);
@@ -175,134 +181,23 @@ public class StatProcessor {
         );
         processLocalVarDeclStat(fi, lvdStat);
         for (String name : node.getNameList()) {
-            fi.addLocVar(name, fi.pc() + 2);
+            fi.addLocVar(name, fi.pc()+2);
         }
 
         int pcJmpToTFC = fi.emitJmp(node.getLineOfDo(), 0, 0);
         processBlock(fi, node.getBlock());
         fi.closeOpenUpvals(node.getBlock().getLastLine());
-        fi.fixSbx(pcJmpToTFC, fi.pc() - pcJmpToTFC);
+        fi.fixSbx(pcJmpToTFC, fi.pc()-pcJmpToTFC);
 
         int line = ExpHelper.lineOf(node.getExpList().get(0));
-
         int rGenerator = fi.slotOfLocVar(forGeneratorVar);
         fi.emitTForCall(line, rGenerator, node.getNameList().size());
-        fi.emitTForLoop(line, rGenerator + 2, pcJmpToTFC - fi.pc() - 1);
+        fi.emitTForLoop(line, rGenerator+2, pcJmpToTFC-fi.pc()-1);
 
         fi.exitScope(fi.pc() - 1);
         fi.fixEndPC(forGeneratorVar, 2);
         fi.fixEndPC(forStateVar, 2);
         fi.fixEndPC(forControlVar, 2);
-    }
-
-    private static void processAssignStat(FuncInfo fi, AssignStat node) {
-        List<Exp> exps = ExpHelper.removeTailNils(node.getExpList());
-        int nExps = exps.size();
-        int nVars = node.getVarList().size();
-
-        int[] tRegs = new int[nVars];
-        int[] kRegs = new int[nVars];
-        int[] vRegs = new int[nVars];
-        int oldRegs = fi.usedRegs;
-
-        for (int i = 0; i < node.getVarList().size(); i++) {
-            Exp exp = node.getVarList().get(i);
-            if (exp instanceof TableAccessExp) {
-                TableAccessExp taExp = (TableAccessExp) exp;
-                tRegs[i] = fi.allocReg();
-                processExp(fi, taExp.getPrefixExp(), tRegs[i], 1);
-                kRegs[i] = fi.allocReg();
-                processExp(fi, taExp.getKeyExp(), kRegs[i], 1);
-            } else {
-                String name = ((NameExp) exp).getName();
-                if (fi.slotOfLocVar(name) < 0 && fi.indexOfUpval(name) < 0) {
-                    // global var
-                    kRegs[i] = -1;
-                    if (fi.indexOfConstant(name) > 0xFF) {
-                        kRegs[i] = fi.allocReg();
-                    }
-                }
-            }
-        }
-        for (int i = 0; i < nVars; i++) {
-            vRegs[i] = fi.usedRegs + i;
-        }
-
-        if (nExps >= nVars) {
-            for (int i = 0; i < exps.size(); i++) {
-                Exp exp = exps.get(i);
-                int a = fi.allocReg();
-                if (i >= nVars && i == nExps - 1 && ExpHelper.isVarargOrFuncCall(exp)) {
-                    processExp(fi, exp, a, 0);
-                } else {
-                    processExp(fi, exp, a, 1);
-                }
-            }
-        } else { // nVars > nExps
-            boolean multRet = false;
-            for (int i = 0; i < exps.size(); i++) {
-                Exp exp = exps.get(i);
-                int a = fi.allocReg();
-                if (i == nExps - 1 && ExpHelper.isVarargOrFuncCall(exp)) {
-                    multRet = true;
-                    int n = nVars - nExps + 1;
-                    processExp(fi, exp, a, n);
-                    fi.allocRegs(n - 1);
-                } else {
-                    processExp(fi, exp, a, 1);
-                }
-            }
-            if (!multRet) {
-                int n = nVars - nExps;
-                int a = fi.allocRegs(n);
-                fi.emitLoadNil(node.getLastLine(), a, n);
-            }
-        }
-
-        int lastLine = node.getLastLine();
-        for (int i = 0; i < node.getVarList().size(); i++) {
-            Exp exp = node.getVarList().get(i);
-            if (!(exp instanceof NameExp)) {
-                fi.emitSetTable(lastLine, tRegs[i], kRegs[i], vRegs[i]);
-                continue;
-            }
-
-            NameExp nameExp = (NameExp) exp;
-            String varName = nameExp.getName();
-            int a = fi.slotOfLocVar(varName);
-            if (a >= 0) {
-                fi.emitMove(lastLine, a, vRegs[i]);
-                continue;
-            }
-
-            int b = fi.indexOfUpval(varName);
-            if (b >= 0) {
-                fi.emitSetUpval(lastLine, vRegs[i], b);
-                continue;
-            }
-
-            a = fi.slotOfLocVar("_ENV");
-            if (a >= 0) {
-                if (kRegs[i] < 0) {
-                    b = 0x100 + fi.indexOfConstant(varName);
-                    fi.emitSetTable(lastLine, a, b, vRegs[i]);
-                } else {
-                    fi.emitSetTable(lastLine, a, kRegs[i], vRegs[i]);
-                }
-                continue;
-            }
-
-            // global var
-            a = fi.indexOfUpval("_ENV");
-            if (kRegs[i] < 0) {
-                b = 0x100 + fi.indexOfConstant(varName);
-                fi.emitSetTabUp(lastLine, a, b, vRegs[i]);
-            } else {
-                fi.emitSetTabUp(lastLine, a, kRegs[i], vRegs[i]);
-            }
-        }
-
-        fi.usedRegs = oldRegs;
     }
 
     private static void processLocalVarDeclStat(FuncInfo fi, LocalVarDeclStat node) {
@@ -354,8 +249,114 @@ public class StatProcessor {
         }
     }
 
-    private static void processLocalFuncDefStat(FuncInfo fi, LocalFuncDefStat node) {
-        int r = fi.addLocVar(node.getName(), fi.pc() + 2);
-        processFuncDefExp(fi, node.getExp(), r);
+    private static void processAssignStat(FuncInfo fi, AssignStat node) {
+        List<Exp> exps = ExpHelper.removeTailNils(node.getExpList());
+        int nExps = exps.size();
+        int nVars = node.getVarList().size();
+
+        int[] tRegs = new int[nVars];
+        int[] kRegs = new int[nVars];
+        int[] vRegs = new int[nVars];
+        int oldRegs = fi.usedRegs;
+
+        for (int i = 0; i < node.getVarList().size(); i++) {
+            Exp exp = node.getVarList().get(i);
+            if (exp instanceof TableAccessExp) {
+                TableAccessExp taExp = (TableAccessExp) exp;
+                tRegs[i] = fi.allocReg();
+                processExp(fi, taExp.getPrefixExp(), tRegs[i], 1);
+                kRegs[i] = fi.allocReg();
+                processExp(fi, taExp.getKeyExp(), kRegs[i], 1);
+            } else {
+                String name = ((NameExp) exp).getName();
+                if (fi.slotOfLocVar(name) < 0 && fi.indexOfUpval(name) < 0) {
+                    // global var
+                    kRegs[i] = -1;
+                    if (fi.indexOfConstant(name) > 0xFF) {
+                        kRegs[i] = fi.allocReg();
+                    }
+                }
+            }
+        }
+        for (int i = 0; i < nVars; i++) {
+            vRegs[i] = fi.usedRegs + i;
+        }
+
+        if (nExps >= nVars) {
+            for (int i = 0; i < exps.size(); i++) {
+                Exp exp = exps.get(i);
+                int a = fi.allocReg();
+                if (i >= nVars && i == nExps-1 && ExpHelper.isVarargOrFuncCall(exp)) {
+                    processExp(fi, exp, a, 0);
+                } else {
+                    processExp(fi, exp, a, 1);
+                }
+            }
+        } else { // nVars > nExps
+            boolean multRet = false;
+            for (int i = 0; i < exps.size(); i++) {
+                Exp exp = exps.get(i);
+                int a = fi.allocReg();
+                if (i == nExps-1 && ExpHelper.isVarargOrFuncCall(exp)) {
+                    multRet = true;
+                    int n = nVars - nExps + 1;
+                    processExp(fi, exp, a, n);
+                    fi.allocRegs(n - 1);
+                } else {
+                    processExp(fi, exp, a, 1);
+                }
+            }
+            if (!multRet) {
+                int n = nVars - nExps;
+                int a = fi.allocRegs(n);
+                fi.emitLoadNil(node.getLastLine(), a, n);
+            }
+        }
+
+        int lastLine = node.getLastLine();
+        for (int i = 0; i < node.getVarList().size(); i++) {
+            Exp exp = node.getVarList().get(i);
+            if (! (exp instanceof NameExp)) {
+                fi.emitSetTable(lastLine, tRegs[i], kRegs[i], vRegs[i]);
+                continue;
+            }
+
+            NameExp nameExp = (NameExp) exp;
+            String varName = nameExp.getName();
+            int a = fi.slotOfLocVar(varName);
+            if (a >= 0) {
+                fi.emitMove(lastLine, a, vRegs[i]);
+                continue;
+            }
+
+            int b = fi.indexOfUpval(varName);
+            if (b >= 0) {
+                fi.emitSetUpval(lastLine, vRegs[i], b);
+                continue;
+            }
+
+            a = fi.slotOfLocVar("_ENV");
+            if (a >= 0) {
+                if (kRegs[i] < 0) {
+                    b = 0x100 + fi.indexOfConstant(varName);
+                    fi.emitSetTable(lastLine, a, b, vRegs[i]);
+                } else {
+                    fi.emitSetTable(lastLine, a, kRegs[i], vRegs[i]);
+                }
+                continue;
+            }
+
+            // global var
+            a = fi.indexOfUpval("_ENV");
+            if (kRegs[i] < 0) {
+                b = 0x100 + fi.indexOfConstant(varName);
+                fi.emitSetTabUp(lastLine, a, b, vRegs[i]);
+            } else {
+                fi.emitSetTabUp(lastLine, a, kRegs[i], vRegs[i]);
+            }
+        }
+
+        // todo
+        fi.usedRegs = oldRegs;
     }
 }

@@ -87,7 +87,7 @@ public class ExpProcessor {
         fi.emitClosure(node.getLastLine(), a, bx);
     }
 
-    static void processTableConstructorExp(FuncInfo fi, TableConstructorExp node, int a) {
+    private static void processTableConstructorExp(FuncInfo fi, TableConstructorExp node, int a) {
         int nArr = 0;
         for (Exp keyExp : node.getKeyExps()) {
             if (keyExp == null) {
@@ -96,9 +96,9 @@ public class ExpProcessor {
         }
         int nExps = node.getKeyExps().size();
         boolean multRet = nExps > 0 &&
-                ExpHelper.isVarargOrFuncCall(node.getValExps().get(nExps - 1));
+                ExpHelper.isVarargOrFuncCall(node.getValExps().get(nExps-1));
 
-        fi.emitNewTable(node.getLine(), a, nArr, nExps - nArr);
+        fi.emitNewTable(node.getLine(), a, nArr, nExps-nArr);
 
         int arrIdx = 0;
         for (int i = 0; i < node.getKeyExps().size(); i++) {
@@ -108,21 +108,21 @@ public class ExpProcessor {
             if (keyExp == null) {
                 arrIdx++;
                 int tmp = fi.allocReg();
-                if (i == nExps - 1 && multRet) {
+                if (i == nExps-1 && multRet) {
                     processExp(fi, valExp, tmp, -1);
                 } else {
                     processExp(fi, valExp, tmp, 1);
                 }
 
-                if (arrIdx % 50 == 0 || arrIdx == nArr) { // LFIELDS_PER_FLUSH
+                if (arrIdx%50 == 0 || arrIdx == nArr) { // LFIELDS_PER_FLUSH
                     int n = arrIdx % 50;
                     if (n == 0) {
                         n = 50;
                     }
                     fi.freeRegs(n);
                     int line = ExpHelper.lastLineOf(valExp);
-                    int c = (arrIdx - 1) / 50 + 1; // todo: c > 0xFF
-                    if (i == nExps - 1 && multRet) {
+                    int c = (arrIdx-1)/50 + 1; // todo: c > 0xFF
+                    if (i == nExps-1 && multRet) {
                         fi.emitSetList(line, a, 0, c);
                     } else {
                         fi.emitSetList(line, a, n, c);

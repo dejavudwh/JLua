@@ -13,7 +13,7 @@ import java.nio.file.Paths;
 public class Main {
 
     public static void main(String[] args) throws Exception {
-        byte[] data = Files.readAllBytes(Paths.get("test/resources/table_test.lua"));
+        byte[] data = Files.readAllBytes(Paths.get("test/resources/closure_test.lua"));
         LuaState ls = new LuaStateImpl();
         ls.register("print", Main::print);
         ls.register("getmetatable", Main::getMetatable);

@@ -44,23 +44,23 @@ public class BlockProcessor {
                 FuncCallExp fcExp = (FuncCallExp) exps.get(0);
                 int r = fi.allocReg();
                 processTailCallExp(fi, fcExp, r);
-                fi.freeReg();;
+                fi.freeReg();
                 fi.emitReturn(lastLine, r, -1);
                 return;
             }
         }
 
-        boolean multRet = ExpHelper.isVarargOrFuncCall(exps.get(nExps - 1));
+        boolean multRet = ExpHelper.isVarargOrFuncCall(exps.get(nExps-1));
         for (int i = 0; i < nExps; i++) {
             Exp exp = exps.get(i);
             int r = fi.allocReg();
-            if (i == nExps - 1 && multRet) {
+            if (i == nExps-1 && multRet) {
                 processExp(fi, exp, r, -1);
             } else {
                 processExp(fi, exp, r, 1);
             }
         }
-        fi.freeReg();
+        fi.freeRegs(nExps);
 
         int a = fi.usedRegs;
         if (multRet) {

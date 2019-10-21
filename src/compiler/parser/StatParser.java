@@ -68,76 +68,77 @@ public class StatParser {
         return new BreakStat(lexer.line());
     }
 
-    // '::' Name '::'
+    // ‘::’ Name ‘::’
     private static LabelStat parseLabelStat(Lexer lexer) {
-        lexer.nextTokenOfKind(TOKEN_SEP_LABEL);
-        String name = lexer.nextIdentifier().getValue();
-        lexer.nextTokenOfKind(TOKEN_SEP_LABEL);
+        lexer.nextTokenOfKind(TOKEN_SEP_LABEL);          // ::
+        String name = lexer.nextIdentifier().getValue(); // name
+        lexer.nextTokenOfKind(TOKEN_SEP_LABEL);          // ::
         return new LabelStat(name);
     }
 
-    // goto name
+    // goto Name
     private static GotoStat parseGotoStat(Lexer lexer) {
-        lexer.nextTokenOfKind(TOKEN_KW_GOTO);
-        String name = lexer.nextIdentifier().getValue();
+        lexer.nextTokenOfKind(TOKEN_KW_GOTO);            // goto
+        String name = lexer.nextIdentifier().getValue(); // name
         return new GotoStat(name);
     }
 
     // do block end
     private static DoStat parseDoStat(Lexer lexer) {
-        lexer.nextTokenOfKind(TOKEN_KW_DO);
-        Block block = parseBlock(lexer);
-        lexer.nextTokenOfKind(TOKEN_KW_END);
+        lexer.nextTokenOfKind(TOKEN_KW_DO);  // do
+        Block block = parseBlock(lexer);     // block
+        lexer.nextTokenOfKind(TOKEN_KW_END); // end
         return new DoStat(block);
     }
 
     // while exp do block end
-    private static Stat parseWhileStat(Lexer lexer) {
-        lexer.nextTokenOfKind(TOKEN_KW_WHILE);
-        Exp exp = parseExp(lexer);
-        lexer.nextTokenOfKind(TOKEN_KW_DO);
-        Block block = parseBlock(lexer);
-        lexer.nextTokenOfKind(TOKEN_KW_END);
+    private static WhileStat parseWhileStat(Lexer lexer) {
+        lexer.nextTokenOfKind(TOKEN_KW_WHILE); // while
+        Exp exp = parseExp(lexer);             // exp
+        lexer.nextTokenOfKind(TOKEN_KW_DO);    // do
+        Block block = parseBlock(lexer);       // block
+        lexer.nextTokenOfKind(TOKEN_KW_END);   // end
         return new WhileStat(exp, block);
     }
 
     // repeat block until exp
-    private static Stat parseRepeatStat(Lexer lexer) {
-        lexer.nextTokenOfKind(TOKEN_KW_REPEAT);
-        Block block = parseBlock(lexer);
-        lexer.nextTokenOfKind(TOKEN_KW_UNTIL);
-        Exp exp = parseExp(lexer);
+    private static RepeatStat parseRepeatStat(Lexer lexer) {
+        lexer.nextTokenOfKind(TOKEN_KW_REPEAT); // repeat
+        Block block = parseBlock(lexer);        // block
+        lexer.nextTokenOfKind(TOKEN_KW_UNTIL);  // until
+        Exp exp = parseExp(lexer);              // exp
         return new RepeatStat(block, exp);
     }
 
     // if exp then block {elseif exp then block} [else block] end
-    private static Stat parseIfStat(Lexer lexer) {
+    private static IfStat parseIfStat(Lexer lexer) {
         List<Exp> exps = new ArrayList<>();
         List<Block> blocks = new ArrayList<>();
 
-        lexer.nextTokenOfKind(TOKEN_KW_IF);
-        exps.add(parseExp(lexer));
-        lexer.nextTokenOfKind(TOKEN_KW_THEN);
-        blocks.add(parseBlock(lexer));
+        lexer.nextTokenOfKind(TOKEN_KW_IF);       // if
+        exps.add(parseExp(lexer));                // exp
+        lexer.nextTokenOfKind(TOKEN_KW_THEN);     // then
+        blocks.add(parseBlock(lexer));            // block
 
         while (lexer.lookAhead() == TOKEN_KW_ELSEIF) {
-            lexer.nextToken();
-            exps.add(parseExp(lexer));
-            lexer.nextTokenOfKind(TOKEN_KW_THEN);
-            blocks.add(parseBlock(lexer));
+            lexer.nextToken();                    // elseif
+            exps.add(parseExp(lexer));            // exp
+            lexer.nextTokenOfKind(TOKEN_KW_THEN); // then
+            blocks.add(parseBlock(lexer));        // block
         }
 
+        // else block => elseif true then block
         if (lexer.lookAhead() == TOKEN_KW_ELSE) {
-            lexer.nextToken();
-            exps.add(new TrueExp(lexer.line()));
-            blocks.add(parseBlock(lexer));
+            lexer.nextToken();                    // else
+            exps.add(new TrueExp(lexer.line()));  //
+            blocks.add(parseBlock(lexer));        // block
         }
 
-        lexer.nextTokenOfKind(TOKEN_KW_END);
+        lexer.nextTokenOfKind(TOKEN_KW_END);      // end
         return new IfStat(exps, blocks);
     }
 
-    // for Name '=' exp ',' exp [',' exp] do block end
+    // for Name ‘=’ exp ‘,’ exp [‘,’ exp] do block end
     // for namelist in explist do block end
     private static Stat parseForStat(Lexer lexer) {
         int lineOfFor = lexer.nextTokenOfKind(TOKEN_KW_FOR).getLine();
@@ -149,28 +150,28 @@ public class StatParser {
         }
     }
 
-    // for Name '=' exp ',' exp [',' exp] do block end
+    // for Name ‘=’ exp ‘,’ exp [‘,’ exp] do block end
     private static ForNumStat finishForNumStat(Lexer lexer, String name, int lineOfFor) {
         ForNumStat stat = new ForNumStat();
-        stat.setLineOfFor(lineOfFor);
-        stat.setVarName(name);
+        stat.setLineOfFor(lineOfFor);           // for
+        stat.setVarName(name);                  // name
 
-        lexer.nextTokenOfKind(TOKEN_OP_ASSIGN);
-        stat.setInitExp(parseExp(lexer));
-        lexer.nextTokenOfKind(TOKEN_SEP_COMMA);
-        stat.setLimitExp(parseExp(lexer));
+        lexer.nextTokenOfKind(TOKEN_OP_ASSIGN); // =
+        stat.setInitExp(parseExp(lexer));       // exp
+        lexer.nextTokenOfKind(TOKEN_SEP_COMMA); // ,
+        stat.setLimitExp(parseExp(lexer));      // exp
 
         if (lexer.lookAhead() == TOKEN_SEP_COMMA) {
-            lexer.nextToken();
-            stat.setStepExp(parseExp(lexer));
+            lexer.nextToken();                  // ,
+            stat.setStepExp(parseExp(lexer));   // exp
         } else {
             stat.setStepExp(new IntegerExp(lexer.line(), 1));
         }
 
-        lexer.nextTokenOfKind(TOKEN_KW_DO);
-        stat.setLineOfDo(lexer.line());
-        stat.setBlock(parseBlock(lexer));
-        lexer.nextTokenOfKind(TOKEN_KW_END);
+        lexer.nextTokenOfKind(TOKEN_KW_DO);     // do
+        stat.setLineOfDo(lexer.line());         //
+        stat.setBlock(parseBlock(lexer));       // block
+        lexer.nextTokenOfKind(TOKEN_KW_END);    // end
 
         return stat;
     }
@@ -180,27 +181,114 @@ public class StatParser {
     // explist ::= exp {‘,’ exp}
     private static ForInStat finishForInStat(Lexer lexer, String name0) {
         ForInStat stat = new ForInStat();
-
-        stat.setNameList(finishNameList(lexer, name0));
-        lexer.nextTokenOfKind(TOKEN_KW_IN);
-        stat.setExpList(parseExpList(lexer));
-        lexer.nextTokenOfKind(TOKEN_KW_DO);
-        stat.setLineOfDo(lexer.line());
-        stat.setBlock(parseBlock(lexer));
-        lexer.nextTokenOfKind(TOKEN_KW_END);
+        // for
+        stat.setNameList(finishNameList(lexer, name0)); // namelist
+        lexer.nextTokenOfKind(TOKEN_KW_IN);             // in
+        stat.setExpList(parseExpList(lexer));           // explist
+        lexer.nextTokenOfKind(TOKEN_KW_DO);             // do
+        stat.setLineOfDo(lexer.line());                 //
+        stat.setBlock(parseBlock(lexer));               // block
+        lexer.nextTokenOfKind(TOKEN_KW_END);            // end
 
         return stat;
     }
 
-    // namelist ::= Name {',' Name}
+    // namelist ::= Name {‘,’ Name}
     private static List<String> finishNameList(Lexer lexer, String name0) {
         List<String> names = new ArrayList<>();
         names.add(name0);
         while (lexer.lookAhead() == TOKEN_SEP_COMMA) {
-            lexer.nextToken();
-            names.add(lexer.nextIdentifier().getValue());
+            lexer.nextToken();                            // ,
+            names.add(lexer.nextIdentifier().getValue()); // Name
         }
         return names;
+    }
+
+    // local function Name funcbody
+    // local namelist [‘=’ explist]
+    private static Stat parseLocalAssignOrFuncDefStat(Lexer lexer) {
+        lexer.nextTokenOfKind(TOKEN_KW_LOCAL);
+        if (lexer.lookAhead() == TOKEN_KW_FUNCTION) {
+            return finishLocalFuncDefStat(lexer);
+        } else {
+            return finishLocalVarDeclStat(lexer);
+        }
+    }
+
+    /*
+    http://www.lua.org/manual/5.3/manual.html#3.4.11
+
+    function f() end          =>  f = function() end
+    function t.a.b.c.f() end  =>  t.a.b.c.f = function() end
+    function t.a.b.c:f() end  =>  t.a.b.c.f = function(self) end
+    local function f() end    =>  local f; f = function() end
+
+    The statement `local function f () body end`
+    translates to `local f; f = function () body end`
+    not to `local f = function () body end`
+    (This only makes a difference when the body of the function
+     contains references to f.)
+    */
+    // local function Name funcbody
+    private static LocalFuncDefStat finishLocalFuncDefStat(Lexer lexer) {
+        lexer.nextTokenOfKind(TOKEN_KW_FUNCTION);        // local function
+        String name = lexer.nextIdentifier().getValue(); // name
+        FuncDefExp fdExp = parseFuncDefExp(lexer);       // funcbody
+        return new LocalFuncDefStat(name, fdExp);
+    }
+
+    // local namelist [‘=’ explist]
+    private static LocalVarDeclStat finishLocalVarDeclStat(Lexer lexer) {
+        String name0 = lexer.nextIdentifier().getValue();     // local Name
+        List<String> nameList = finishNameList(lexer, name0); // { , Name }
+        List<Exp> expList = null;
+        if (lexer.lookAhead() == TOKEN_OP_ASSIGN) {
+            lexer.nextToken();                                // ==
+            expList = parseExpList(lexer);                    // explist
+        }
+        int lastLine = lexer.line();
+        return new LocalVarDeclStat(lastLine, nameList, expList);
+    }
+
+    // varlist ‘=’ explist
+    // functioncall
+    private static Stat parseAssignOrFuncCallStat(Lexer lexer) {
+        Exp prefixExp = parsePrefixExp(lexer);
+        if (prefixExp instanceof FuncCallExp) {
+            return new FuncCallStat((FuncCallExp) prefixExp);
+        } else {
+            return parseAssignStat(lexer, prefixExp);
+        }
+    }
+
+    // varlist ‘=’ explist |
+    private static AssignStat parseAssignStat(Lexer lexer, Exp var0) {
+        List<Exp> varList = finishVarList(lexer, var0); // varlist
+        lexer.nextTokenOfKind(TOKEN_OP_ASSIGN);         // =
+        List<Exp> expList = parseExpList(lexer);        // explist
+        int lastLine = lexer.line();
+        return new AssignStat(lastLine, varList, expList);
+    }
+
+    // varlist ::= var {‘,’ var}
+    private static List<Exp> finishVarList(Lexer lexer, Exp var0) {
+        List<Exp> vars = new ArrayList<>();
+        vars.add(checkVar(lexer, var0));               // var
+        while (lexer.lookAhead() == TOKEN_SEP_COMMA) { // {
+            lexer.nextToken();                         // ,
+            Exp exp = parsePrefixExp(lexer);           // var
+            vars.add(checkVar(lexer, exp));            //
+        }                                              // }
+        return vars;
+    }
+
+    // var ::=  Name | prefixexp ‘[’ exp ‘]’ | prefixexp ‘.’ Name
+    private static Exp checkVar(Lexer lexer, Exp exp) {
+        if (exp instanceof NameExp || exp instanceof TableAccessExp) {
+            return exp;
+        }
+        lexer.nextTokenOfKind(null); // trigger error
+        throw new RuntimeException("unreachable!");
     }
 
     // function funcname funcbody
@@ -208,13 +296,13 @@ public class StatParser {
     // funcbody ::= ‘(’ [parlist] ‘)’ block end
     // parlist ::= namelist [‘,’ ‘...’] | ‘...’
     // namelist ::= Name {‘,’ Name}
-    private static Stat parseFuncDefStat(Lexer lexer) {
-        lexer.nextTokenOfKind(TOKEN_KW_FUNCTION);
-        Map<Exp, Boolean> map = parseFuncName(lexer);
+    private static AssignStat parseFuncDefStat(Lexer lexer) {
+        lexer.nextTokenOfKind(TOKEN_KW_FUNCTION);     // function
+        Map<Exp, Boolean> map = parseFuncName(lexer); // funcname
         Exp fnExp = map.keySet().iterator().next();
         boolean hasColon = map.values().iterator().next();
-        FuncDefExp fdExp = parseFuncDefExp(lexer);
-        if (hasColon) {
+        FuncDefExp fdExp = parseFuncDefExp(lexer);    // funcbody
+        if (hasColon) { // insert self
             if (fdExp.getParList() == null) {
                 fdExp.setParList(new ArrayList<>());
             }
@@ -226,7 +314,7 @@ public class StatParser {
                 Collections.singletonList(fdExp));
     }
 
-    // funcname ::= Name {',' Name} [':' Name]
+    // funcname ::= Name {‘.’ Name} [‘:’ Name]
     private static Map<Exp, Boolean> parseFuncName(Lexer lexer) {
         Token id = lexer.nextIdentifier();
         Exp exp = new NameExp(id.getLine(), id.getValue());
@@ -246,79 +334,7 @@ public class StatParser {
             hasColon = true;
         }
 
+        // workaround: return multiple values
         return Collections.singletonMap(exp, hasColon);
     }
-
-    // local function Name funcbody
-    // local namelist ['=' explist]
-    private static Stat parseLocalAssignOrFuncDefStat(Lexer lexer) {
-        lexer.nextTokenOfKind(TOKEN_KW_LOCAL);
-        if (lexer.lookAhead() == TOKEN_KW_FUNCTION) {
-            return finishLocalFuncDefStat(lexer);
-        } else {
-            return finishLocalVarDeclStat(lexer);
-        }
-    }
-
-    // local function Name funcbody
-    private static LocalFuncDefStat finishLocalFuncDefStat(Lexer lexer) {
-        lexer.nextTokenOfKind(TOKEN_KW_FUNCTION);
-        String name = lexer.nextIdentifier().getValue();
-        FuncDefExp fdExp = parseFuncDefExp(lexer);
-        return new LocalFuncDefStat(name, fdExp);
-    }
-
-    // local namelist [‘=’ explist]
-    private static LocalVarDeclStat finishLocalVarDeclStat(Lexer lexer) {
-        String name0 = lexer.nextIdentifier().getValue();
-        List<String> nameList = finishNameList(lexer, name0);
-        List<Exp> expList = null;
-        if (lexer.lookAhead() == TOKEN_OP_ASSIGN) {
-            lexer.nextToken();
-            expList = parseExpList(lexer);
-        }
-        int lastLine = lexer.line();
-        return new LocalVarDeclStat(lastLine, nameList, expList);
-    }
-
-    // varlist '=' explist
-    // functioncall
-    private static Stat parseAssignOrFuncCallStat(Lexer lexer) {
-        Exp prefixExp = parsePrefixExp(lexer);
-        if (prefixExp instanceof FuncCallExp) {
-            return new FuncCallStat((FuncCallExp) prefixExp);
-        } else {
-            return parseAssignStat(lexer, prefixExp);
-        }
-    }
-
-    // varlist '=' exlist |
-    private static AssignStat parseAssignStat(Lexer lexer, Exp var0) {
-        List<Exp> varList = finishVarList(lexer, var0);
-        lexer.nextTokenOfKind(TOKEN_OP_ASSIGN);
-        List<Exp> expList = parseExpList(lexer);
-        int lastLine = lexer.line();
-        return new AssignStat(lastLine, varList, expList);
-    }
-
-    // varlist ::= var {',' var}
-    private static List<Exp> finishVarList(Lexer lexer, Exp var0) {
-        List<Exp> vars = new ArrayList<>();
-        while (lexer.lookAhead() == TOKEN_SEP_COMMA) {
-            lexer.nextToken();
-            Exp exp = parsePrefixExp(lexer);
-            vars.add(checkVar(lexer, exp));
-        }
-        return vars;
-    }
-
-    // var ::=  Name | prefixexp ‘[’ exp ‘]’ | prefixexp ‘.’ Name
-    private static Exp checkVar(Lexer lexer, Exp exp) {
-        if (exp instanceof NameExp || exp instanceof TableAccessExp) {
-            return exp;
-        }
-        lexer.nextTokenOfKind(null); // trigger error
-        throw new RuntimeException("unreachable!");
-    }
-
 }

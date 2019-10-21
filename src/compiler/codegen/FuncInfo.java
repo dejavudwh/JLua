@@ -258,6 +258,15 @@ public class FuncInfo {
         insts.set(pc, i);
     }
 
+    void fixEndPC(String name, int delta) {
+        for (int i = locVars.size() - 1; i >= 0; i--) {
+            LocVarInfo locVar = locVars.get(i);
+            if (locVar.name.equals(name)) {
+                locVar.endPC += delta;
+                return;
+            }
+        }
+    }
     void emitABC(int line, OpCode opcode, int a, int b, int c) {
         int i = b << 23 | c << 14 | a << 6 | opcode.ordinal();
         insts.add(i);

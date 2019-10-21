@@ -87,4 +87,16 @@ public class BinaryChunk {
         return new String(b);
     }
 
+    public static boolean isBinaryChunk(byte[] data) {
+        if (data == null || data.length < 4) {
+            return false;
+        }
+        for (int i = 0; i < 4; i++) {
+            if (data[i] != LUA_SIGNATURE[i]) {
+                return false;
+            }
+        }
+        return true;
+    }
+
 }

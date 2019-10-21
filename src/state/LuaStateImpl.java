@@ -6,6 +6,7 @@ import binchunk.Prototype;
 import binchunk.Upvalue;
 import vm.Instruction;
 import vm.OpCode;
+import compiler.Compiler;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -593,7 +594,9 @@ public class LuaStateImpl implements LuaState, LuaVM {
 
     @Override
     public ThreadStatus load(byte[] chunk, String chunkName, String mode) {
-        Prototype proto = BinaryChunk.undump(chunk);
+        Prototype proto = BinaryChunk.isBinaryChunk(chunk)
+                ? BinaryChunk.undump(chunk)
+                : Compiler.compile(new String(chunk), chunkName);
         Closure closure = new Closure(proto);
         stack.push(closure);
         if (proto.getUpvalues().length > 0) {

@@ -138,7 +138,24 @@ public class FuncInfo {
     }
 
     void exitScope(int endPC) {
+        List<Integer> pendingBreakJmps = breaks.remove(breaks.size() - 1);
 
+        if (pendingBreakJmps != null) {
+            int a = getJmpArgA();
+            for (int pc : pendingBreakJmps) {
+                int sBx = pc() - pc;
+                int i = (sBx+MAXARG_sBx)<<14 | a<<6 | OpCode.JMP.ordinal();
+                insts.set(pc, i);
+            }
+        }
+
+        scopeLv--;
+        for (LocVarInfo locVar : new ArrayList<>(locNames.values())) {
+            if (locVar.scopeLv > scopeLv) { // out of scope
+                locVar.endPC = endPC;
+                removeLocVar(locVar);
+            }
+        }
     }
 
     int addLocVar(String name, int startPC) {

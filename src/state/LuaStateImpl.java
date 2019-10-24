@@ -34,6 +34,7 @@ public class LuaStateImpl implements LuaState, LuaVM {
     }
 
     private void pushLuaStack(LuaStack newTop) {
+        // Connect the call stack with a linked list
         newTop.prev = this.stack;
         this.stack = newTop;
     }
@@ -644,6 +645,7 @@ public class LuaStateImpl implements LuaState, LuaVM {
         stack.pop();
 
         // run closure
+        // Link to the call stack
         pushLuaStack(newStack);
         int r = c.javaFunc.invoke(this);
         popLuaStack();
@@ -698,6 +700,7 @@ public class LuaStateImpl implements LuaState, LuaVM {
 
     @Override
     public ThreadStatus pCall(int nArg, int nResults, int msgh) {
+        // Catches errors during function calls
         LuaStack caller = stack;
         try {
             call(nArg, nResults);

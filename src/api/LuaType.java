@@ -1,5 +1,9 @@
 package api;
 
+/*
+    Lua data type
+ */
+
 public enum LuaType {
 
     LUA_TNIL,

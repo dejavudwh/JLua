@@ -16,6 +16,7 @@ public class LuaStack {
     private final ArrayList<Object> slots = new ArrayList<>();
 
     /* Function call support */
+    // The currently called function
     Closure closure;
     LuaStateImpl state;
     List<Object> varargs;
@@ -24,7 +25,6 @@ public class LuaStack {
 
     /* linked list for implementation of the call stack with linked list */
     LuaStack prev;
-
 
     int top() {
         return slots.size();

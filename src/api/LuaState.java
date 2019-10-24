@@ -1,9 +1,13 @@
 package api;
 
+/*
+    Operations on the Lua stack within Lua vm machine
+ */
 public interface LuaState {
 
     int LUA_MINSTACK = 20;
     int LUAI_MAXSTACK = 1000000;
+    // pseudo index
     int LUA_REGISTRYINDEX = -LUAI_MAXSTACK - 1000;
     long LUA_RIDX_GLOBALS = 2;
 

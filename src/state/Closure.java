@@ -4,6 +4,10 @@ import api.JavaFunction;
 import binchunk.Prototype;
 import lombok.Getter;
 
+/*
+    A class that represents a Lua function or a Java function
+ */
+
 @Getter
 public class Closure {
 

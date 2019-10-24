@@ -10,6 +10,7 @@ import java.util.Map;
 public class LuaTable {
 
     LuaTable metatable;
+    // arr and map are designed to support both index and key values quickly
     private List<Object> arr;
     private Map<Object, Object> map;
     // used by next()
@@ -66,6 +67,7 @@ public class LuaTable {
                 int arrLen = arr.size();
                 if (idx <= arrLen) {
                     arr.set(idx - 1, val);
+                    // Clear all the holes in the tail
                     if (idx == arrLen && val == null) {
                         shrinkArray();
                     }

@@ -144,7 +144,7 @@ public class FuncInfo {
             int a = getJmpArgA();
             for (int pc : pendingBreakJmps) {
                 int sBx = pc() - pc;
-                int i = (sBx+MAXARG_sBx)<<14 | a<<6 | OpCode.JMP.ordinal();
+                int i = (sBx + MAXARG_sBx) << 14 | a << 6 | OpCode.JMP.ordinal();
                 insts.set(pc, i);
             }
         }
@@ -271,7 +271,7 @@ public class FuncInfo {
     void fixSbx(int pc, int sBx) {
         int i = insts.get(pc);
         i = i << 18 >> 18;                  // clear sBx
-        i = i | (sBx+MAXARG_sBx)<<14; // reset sBx
+        i = i | (sBx + MAXARG_sBx) << 14; // reset sBx
         insts.set(pc, i);
     }
 
@@ -287,25 +287,25 @@ public class FuncInfo {
     }
 
     void emitABC(int line, OpCode opcode, int a, int b, int c) {
-        int i = b<<23 | c<<14 | a<<6 | opcode.ordinal();
+        int i = b << 23 | c << 14 | a << 6 | opcode.ordinal();
         insts.add(i);
         lineNums.add(line);
     }
 
     private void emitABx(int line, OpCode opcode, int a, int bx) {
-        int i = bx<<14 | a<<6 | opcode.ordinal();
+        int i = bx << 14 | a << 6 | opcode.ordinal();
         insts.add(i);
         lineNums.add(line);
     }
 
     private void emitAsBx(int line, OpCode opcode, int a, int sBx) {
-        int i = (sBx+MAXARG_sBx)<<14 | a<<6 | opcode.ordinal();
+        int i = (sBx + MAXARG_sBx) << 14 | a << 6 | opcode.ordinal();
         insts.add(i);
         lineNums.add(line);
     }
 
     private void emitAx(int line, OpCode opcode, int ax) {
-        int i = ax<<6 | opcode.ordinal();
+        int i = ax << 6 | opcode.ordinal();
         insts.add(i);
         lineNums.add(line);
     }
@@ -317,7 +317,7 @@ public class FuncInfo {
 
     // r[a], r[a+1], ..., r[a+b] = nil
     void emitLoadNil(int line, int a, int n) {
-        emitABC(line, OpCode.LOADNIL, a, n-1, 0);
+        emitABC(line, OpCode.LOADNIL, a, n - 1, 0);
     }
 
     // r[a] = (bool)b; if (c) pc++
@@ -338,7 +338,7 @@ public class FuncInfo {
 
     // r[a], r[a+1], ..., r[a+b-2] = vararg
     void emitVararg(int line, int a, int n) {
-        emitABC(line, OpCode.VARARG, a, n+1, 0);
+        emitABC(line, OpCode.VARARG, a, n + 1, 0);
     }
 
     // r[a] = emitClosure(proto[bx])
@@ -389,17 +389,17 @@ public class FuncInfo {
 
     // r[a], ..., r[a+c-2] = r[a](r[a+1], ..., r[a+b-1])
     void emitCall(int line, int a, int nArgs, int nRet) {
-        emitABC(line, OpCode.CALL, a, nArgs+1, nRet+1);
+        emitABC(line, OpCode.CALL, a, nArgs + 1, nRet + 1);
     }
 
     // return r[a](r[a+1], ... ,r[a+b-1])
     void emitTailCall(int line, int a, int nArgs) {
-        emitABC(line, OpCode.TAILCALL, a, nArgs+1, 0);
+        emitABC(line, OpCode.TAILCALL, a, nArgs + 1, 0);
     }
 
     // return r[a], ... ,r[a+b-2]
     void emitReturn(int line, int a, int n) {
-        emitABC(line, OpCode.RETURN, a, n+1, 0);
+        emitABC(line, OpCode.RETURN, a, n + 1, 0);
     }
 
     // r[a+1] = r[b]; r[a] = r[b][rk(c)]
@@ -444,10 +444,18 @@ public class FuncInfo {
     // r[a] = op r[b]
     void emitUnaryOp(int line, TokenKind op, int a, int b) {
         switch (op) {
-            case TOKEN_OP_NOT:  emitABC(line, OpCode.NOT,  a, b, 0); break;
-            case TOKEN_OP_BNOT: emitABC(line, OpCode.BNOT, a, b, 0); break;
-            case TOKEN_OP_LEN:  emitABC(line, OpCode.LEN,  a, b, 0); break;
-            case TOKEN_OP_UNM:  emitABC(line, OpCode.UNM,  a, b, 0); break;
+            case TOKEN_OP_NOT:
+                emitABC(line, OpCode.NOT, a, b, 0);
+                break;
+            case TOKEN_OP_BNOT:
+                emitABC(line, OpCode.BNOT, a, b, 0);
+                break;
+            case TOKEN_OP_LEN:
+                emitABC(line, OpCode.LEN, a, b, 0);
+                break;
+            case TOKEN_OP_UNM:
+                emitABC(line, OpCode.UNM, a, b, 0);
+                break;
         }
     }
 
@@ -458,12 +466,24 @@ public class FuncInfo {
             emitABC(line, arithAndBitwiseBinops.get(op), a, b, c);
         } else {
             switch (op) {
-                case TOKEN_OP_EQ: emitABC(line, OpCode.EQ, 1, b, c); break;
-                case TOKEN_OP_NE: emitABC(line, OpCode.EQ, 0, b, c); break;
-                case TOKEN_OP_LT: emitABC(line, OpCode.LT, 1, b, c); break;
-                case TOKEN_OP_GT: emitABC(line, OpCode.LT, 1, c, b); break;
-                case TOKEN_OP_LE: emitABC(line, OpCode.LE, 1, b, c); break;
-                case TOKEN_OP_GE: emitABC(line, OpCode.LE, 1, c, b); break;
+                case TOKEN_OP_EQ:
+                    emitABC(line, OpCode.EQ, 1, b, c);
+                    break;
+                case TOKEN_OP_NE:
+                    emitABC(line, OpCode.EQ, 0, b, c);
+                    break;
+                case TOKEN_OP_LT:
+                    emitABC(line, OpCode.LT, 1, b, c);
+                    break;
+                case TOKEN_OP_GT:
+                    emitABC(line, OpCode.LT, 1, c, b);
+                    break;
+                case TOKEN_OP_LE:
+                    emitABC(line, OpCode.LE, 1, b, c);
+                    break;
+                case TOKEN_OP_GE:
+                    emitABC(line, OpCode.LE, 1, c, b);
+                    break;
             }
             emitJmp(line, 0, 1);
             emitLoadBool(line, a, 0, 1);

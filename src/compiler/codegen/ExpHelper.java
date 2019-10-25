@@ -7,7 +7,7 @@ import java.util.List;
 
 public class ExpHelper {
 
-    static boolean isVarargOrFuncCall(Exp exp){
+    static boolean isVarargOrFuncCall(Exp exp) {
         return exp instanceof VarargExp
                 || exp instanceof FuncCallExp;
     }

@@ -138,7 +138,7 @@ public class StatParser {
         return new IfStat(exps, blocks);
     }
 
-    // for Name ‘=’ exp ‘,’ exp [‘,’ exp] do block end
+    // for Name ‘=’ exp ‘,’ exp [‘,’ exp] do block end     - exp1 - exp2 | exp3 is the step lengthIs the step length
     // for namelist in explist do block end
     private static Stat parseForStat(Lexer lexer) {
         int lineOfFor = lexer.nextTokenOfKind(TOKEN_KW_FOR).getLine();
@@ -215,20 +215,6 @@ public class StatParser {
         }
     }
 
-    /*
-    http://www.lua.org/manual/5.3/manual.html#3.4.11
-
-    function f() end          =>  f = function() end
-    function t.a.b.c.f() end  =>  t.a.b.c.f = function() end
-    function t.a.b.c:f() end  =>  t.a.b.c.f = function(self) end
-    local function f() end    =>  local f; f = function() end
-
-    The statement `local function f () body end`
-    translates to `local f; f = function () body end`
-    not to `local f = function () body end`
-    (This only makes a difference when the body of the function
-     contains references to f.)
-    */
     // local function Name funcbody
     private static LocalFuncDefStat finishLocalFuncDefStat(Lexer lexer) {
         lexer.nextTokenOfKind(TOKEN_KW_FUNCTION);        // local function

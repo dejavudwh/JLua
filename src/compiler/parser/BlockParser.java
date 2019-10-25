@@ -8,7 +8,6 @@ import compiler.lexer.Lexer;
 import compiler.lexer.TokenKind;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 

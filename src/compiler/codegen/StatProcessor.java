@@ -45,7 +45,7 @@ public class StatProcessor {
     }
 
     private static void processLocalFuncDefStat(FuncInfo fi, LocalFuncDefStat node) {
-        int r = fi.addLocVar(node.getName(), fi.pc()+2);
+        int r = fi.addLocVar(node.getName(), fi.pc() + 2);
         processFuncDefExp(fi, node.getExp(), r);
     }
 
@@ -81,10 +81,10 @@ public class StatProcessor {
         fi.enterScope(true);
         processBlock(fi, node.getBlock());
         fi.closeOpenUpvals(node.getBlock().getLastLine());
-        fi.emitJmp(node.getBlock().getLastLine(), 0, pcBeforeExp-fi.pc()-1);
+        fi.emitJmp(node.getBlock().getLastLine(), 0, pcBeforeExp - fi.pc() - 1);
         fi.exitScope(fi.pc());
 
-        fi.fixSbx(pcJmpToEnd, fi.pc()-pcJmpToEnd);
+        fi.fixSbx(pcJmpToEnd, fi.pc() - pcJmpToEnd);
     }
 
     private static void processRepeatStat(FuncInfo fi, RepeatStat node) {
@@ -99,7 +99,7 @@ public class StatProcessor {
 
         int line = ExpHelper.lastLineOf(node.getExp());
         fi.emitTest(line, a, 0);
-        fi.emitJmp(line, fi.getJmpArgA(), pcBeforeBlock-fi.pc()-1);
+        fi.emitJmp(line, fi.getJmpArgA(), pcBeforeBlock - fi.pc() - 1);
         fi.closeOpenUpvals(line);
 
         fi.exitScope(fi.pc() + 1);
@@ -112,7 +112,7 @@ public class StatProcessor {
         for (int i = 0; i < node.getExps().size(); i++) {
             Exp exp = node.getExps().get(i);
             if (pcJmpToNextExp >= 0) {
-                fi.fixSbx(pcJmpToNextExp, fi.pc()-pcJmpToNextExp);
+                fi.fixSbx(pcJmpToNextExp, fi.pc() - pcJmpToNextExp);
             }
 
             int oldRegs = fi.usedRegs;
@@ -128,7 +128,7 @@ public class StatProcessor {
             processBlock(fi, block);
             fi.closeOpenUpvals(block.getLastLine());
             fi.exitScope(fi.pc() + 1);
-            if (i < node.getExps().size()-1) {
+            if (i < node.getExps().size() - 1) {
                 pcJmpToEnds[i] = fi.emitJmp(block.getLastLine(), 0, 0);
             } else {
                 pcJmpToEnds[i] = pcJmpToNextExp;
@@ -136,7 +136,7 @@ public class StatProcessor {
         }
 
         for (int pc : pcJmpToEnds) {
-            fi.fixSbx(pc, fi.pc()-pc);
+            fi.fixSbx(pc, fi.pc() - pc);
         }
     }
 
@@ -151,7 +151,7 @@ public class StatProcessor {
                 Arrays.asList(forIndexVar, forLimitVar, forStepVar),
                 Arrays.asList(node.getInitExp(), node.getLimitExp(), node.getStepExp()));
         processLocalVarDeclStat(fi, lvdStat);
-        fi.addLocVar(node.getVarName(), fi.pc()+2);
+        fi.addLocVar(node.getVarName(), fi.pc() + 2);
 
         int a = fi.usedRegs - 4;
         int pcForPrep = fi.emitForPrep(node.getLineOfDo(), a, 0);
@@ -159,8 +159,8 @@ public class StatProcessor {
         fi.closeOpenUpvals(node.getBlock().getLastLine());
         int pcForLoop = fi.emitForLoop(node.getLineOfFor(), a, 0);
 
-        fi.fixSbx(pcForPrep, pcForLoop-pcForPrep-1);
-        fi.fixSbx(pcForLoop, pcForPrep-pcForLoop);
+        fi.fixSbx(pcForPrep, pcForLoop - pcForPrep - 1);
+        fi.fixSbx(pcForLoop, pcForPrep - pcForLoop);
 
         fi.exitScope(fi.pc());
         fi.fixEndPC(forIndexVar, 1);
@@ -181,18 +181,18 @@ public class StatProcessor {
         );
         processLocalVarDeclStat(fi, lvdStat);
         for (String name : node.getNameList()) {
-            fi.addLocVar(name, fi.pc()+2);
+            fi.addLocVar(name, fi.pc() + 2);
         }
 
         int pcJmpToTFC = fi.emitJmp(node.getLineOfDo(), 0, 0);
         processBlock(fi, node.getBlock());
         fi.closeOpenUpvals(node.getBlock().getLastLine());
-        fi.fixSbx(pcJmpToTFC, fi.pc()-pcJmpToTFC);
+        fi.fixSbx(pcJmpToTFC, fi.pc() - pcJmpToTFC);
 
         int line = ExpHelper.lineOf(node.getExpList().get(0));
         int rGenerator = fi.slotOfLocVar(forGeneratorVar);
         fi.emitTForCall(line, rGenerator, node.getNameList().size());
-        fi.emitTForLoop(line, rGenerator+2, pcJmpToTFC-fi.pc()-1);
+        fi.emitTForLoop(line, rGenerator + 2, pcJmpToTFC - fi.pc() - 1);
 
         fi.exitScope(fi.pc() - 1);
         fi.fixEndPC(forGeneratorVar, 2);
@@ -207,7 +207,7 @@ public class StatProcessor {
 
         int oldRegs = fi.usedRegs;
         if (nExps == nNames) {
-            for(Exp exp : exps) {
+            for (Exp exp : exps) {
                 int a = fi.allocReg();
                 processExp(fi, exp, a, 1);
             }
@@ -215,7 +215,7 @@ public class StatProcessor {
             for (int i = 0; i < exps.size(); i++) {
                 Exp exp = exps.get(i);
                 int a = fi.allocReg();
-                if (i == nExps-1 && ExpHelper.isVarargOrFuncCall(exp)) {
+                if (i == nExps - 1 && ExpHelper.isVarargOrFuncCall(exp)) {
                     processExp(fi, exp, a, 0);
                 } else {
                     processExp(fi, exp, a, 1);
@@ -226,7 +226,7 @@ public class StatProcessor {
             for (int i = 0; i < exps.size(); i++) {
                 Exp exp = exps.get(i);
                 int a = fi.allocReg();
-                if (i == nExps-1 && ExpHelper.isVarargOrFuncCall(exp)) {
+                if (i == nExps - 1 && ExpHelper.isVarargOrFuncCall(exp)) {
                     multRet = true;
                     int n = nNames - nExps + 1;
                     processExp(fi, exp, a, n);
@@ -286,7 +286,7 @@ public class StatProcessor {
             for (int i = 0; i < exps.size(); i++) {
                 Exp exp = exps.get(i);
                 int a = fi.allocReg();
-                if (i >= nVars && i == nExps-1 && ExpHelper.isVarargOrFuncCall(exp)) {
+                if (i >= nVars && i == nExps - 1 && ExpHelper.isVarargOrFuncCall(exp)) {
                     processExp(fi, exp, a, 0);
                 } else {
                     processExp(fi, exp, a, 1);
@@ -297,7 +297,7 @@ public class StatProcessor {
             for (int i = 0; i < exps.size(); i++) {
                 Exp exp = exps.get(i);
                 int a = fi.allocReg();
-                if (i == nExps-1 && ExpHelper.isVarargOrFuncCall(exp)) {
+                if (i == nExps - 1 && ExpHelper.isVarargOrFuncCall(exp)) {
                     multRet = true;
                     int n = nVars - nExps + 1;
                     processExp(fi, exp, a, n);
@@ -316,7 +316,7 @@ public class StatProcessor {
         int lastLine = node.getLastLine();
         for (int i = 0; i < node.getVarList().size(); i++) {
             Exp exp = node.getVarList().get(i);
-            if (! (exp instanceof NameExp)) {
+            if (!(exp instanceof NameExp)) {
                 fi.emitSetTable(lastLine, tRegs[i], kRegs[i], vRegs[i]);
                 continue;
             }
